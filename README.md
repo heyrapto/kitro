@@ -236,4 +236,4 @@ Changes land through pull requests against `main`. Record design decisions with 
 
 [Apache-2.0, confirm.] See `LICENSE`.
 
-Kitro's escrow flow follows the pattern of the x402 `auth-capture` binding for the XRP Ledger, which locks a payment in escrow and releases it only after the delivery is checked. [Say whether you reuse that package or reimplement the idea, and link it.] The project started at [event name, date]; pitch notes are in `docs/pitch.md`.
+Kitro's escrow flow follows the pattern of the x402 `auth-capture` binding for the XRP Ledger, which locks a payment in escrow and releases it only after the delivery is checked. [Say whether you reuse that package or reimplement the idea, and link it.] The project started at [event name, date]; pitch notes are in `docs/pitch.md`.# kitro
