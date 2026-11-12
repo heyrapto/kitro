@@ -2,25 +2,37 @@
   "name": "kitro",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22"
   },
-  "dependencies": {
-    "next": "16.4.6",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:dashboard": "pnpm --filter @kitro/dashboard dev",
+    "dev:service": "pnpm --filter @kitro/policy-service dev",
+    "dev:agent": "pnpm --filter @kitro/agent dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "check": "turbo run lint typecheck build test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @kitro/db db:generate",
+    "db:migrate": "pnpm --filter @kitro/db db:migrate",
+    "db:push": "pnpm --filter @kitro/db db:push",
+    "db:studio": "pnpm --filter @kitro/db db:studio",
+    "testnet:setup": "pnpm --filter @kitro/scripts setup-testnet",
+    "testnet:e2e": "pnpm --filter @kitro/scripts e2e"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "4.3.3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.6",
-    "tailwindcss": "4.3.3",
-    "typescript": "^5"
+    "@types/node": "^24.19.2",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
   }
 }

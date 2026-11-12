@@ -1,0 +1,22 @@
+{
+  "name": "@kitro/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/run.ts",
+    "start": "tsx src/run.ts",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.102",
+    "@kitro/client": "workspace:*",
+    "@kitro/core": "workspace:*",
+    "ai": "^7.0.169",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

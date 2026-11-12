@@ -1,0 +1,27 @@
+{
+  "name": "@kitro/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./mandate": "./src/mandate.ts",
+    "./request": "./src/request.ts",
+    "./receipt": "./src/receipt.ts"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "canonicalize": "^5.1.0",
+    "ripple-keypairs": "^3.1.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

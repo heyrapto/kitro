@@ -1,0 +1,9 @@
+node_modules
+.next
+.turbo
+dist
+coverage
+pnpm-lock.yaml
+next-env.d.ts
+# Design docs are authored prose; format them separately when editing.
+docs/

@@ -5,7 +5,7 @@ Chosen for speed in a short build, a clean demo, and a clear separation between 
 | Layer | Choice | Why |
 | --- | --- | --- |
 | Language | **TypeScript** everywhere | One language across dashboard, service, agent and scripts. Shared types for the mandate and API. |
-| Dashboard | **Next.js 15 (App Router)** | Your choice. Server components for data, route handlers for operator auth, easy deploy on Vercel. |
+| Dashboard | **Next.js 16 (App Router)** | Your choice. Server components for data, route handlers for operator auth, easy deploy on Vercel. |
 | UI | **Tailwind CSS + shadcn/ui** | Fast, clean tables, dialogs and forms. |
 | Policy service | **Hono** on Node 22 | Small, fast, separate process. It must NOT be a Next.js route, because it has to be independent of the app the agent can reach. |
 | Validation | **Zod** | One schema for API input, mandate, and the agent's extraction output. |

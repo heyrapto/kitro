@@ -4,7 +4,7 @@
 
 An AI agent pays a company's bills. A person sets the rules. The XRP Ledger and an independent policy service enforce them, so the agent can ask for a payment but can never approve its own. No custom smart contract is deployed: native XRPL features hold the money and check the signatures.
 
-> **Status: design draft.** Testnet only, not audited. Nothing in this repository is described as working unless its status says so. Interfaces will change. Replace every `[bracketed]` item before publishing.
+> **Status: scaffold.** Testnet only, not audited. The docs in [`docs/`](./docs) are the design; code is being built in order. Nothing in this repository is described as working unless its status says so. Replace every `[bracketed]` item before publishing.
 
 ## Contents
 
@@ -61,25 +61,25 @@ sequenceDiagram
   P-->>A: signed decision receipt
 ```
 
-| Case | XRPL mechanism | Who enforces it |
-| --- | --- | --- |
-| Routine supplier | `PaymentChannelCreate`, then `PaymentChannelClaim` | The ledger: the channel holds a fixed amount for one fixed payee |
-| Any treasury transaction | Account with a signer list (`SignerListSet`), quorum 2 | The ledger: a transaction without the policy service's signature is invalid |
-| New supplier | `EscrowCreate` with a condition and `CancelAfter`, then `EscrowFinish` or `EscrowCancel` | The ledger: funds release only with the fulfillment, or return after the deadline |
-| Unusual or over-limit payment | Held in the policy service's queue | A person: nothing is signed until they approve |
-| Change the rules | Signed mandate update, `PaymentChannelFund`, `SignerListSet` | The operator, outside the agent |
+| Case                          | XRPL mechanism                                                                           | Who enforces it                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Routine supplier              | `PaymentChannelCreate`, then `PaymentChannelClaim`                                       | The ledger: the channel holds a fixed amount for one fixed payee                  |
+| Any treasury transaction      | Account with a signer list (`SignerListSet`), quorum 2                                   | The ledger: a transaction without the policy service's signature is invalid       |
+| New supplier                  | `EscrowCreate` with a condition and `CancelAfter`, then `EscrowFinish` or `EscrowCancel` | The ledger: funds release only with the fulfillment, or return after the deadline |
+| Unusual or over-limit payment | Held in the policy service's queue                                                       | A person: nothing is signed until they approve                                    |
+| Change the rules              | Signed mandate update, `PaymentChannelFund`, `SignerListSet`                             | The operator, outside the agent                                                   |
 
 ## What this repository provides
 
-| Component | Description | Location | Status |
-| --- | --- | --- | --- |
-| Mandate format | A signed list of limits: per-payment cap, daily total, allowed payees, escrow rules. | [`specs/mandate.md`](./specs/mandate.md) | Planned |
-| Policy service | An independent service that checks each request against the mandate and co-signs or refuses. | [`apps/policy-service`](./apps/policy-service) | Planned |
-| Budget channels | Helpers to create, fund and close one Payment Channel per routine supplier, and to sign claims. | [`packages/kitro/src/channels`](./packages/kitro/src/channels) | Planned |
-| Escrow for new suppliers | Create, finish and cancel conditional escrows, with a pluggable delivery verifier. | [`packages/kitro/src/escrow`](./packages/kitro/src/escrow) | Planned |
-| Operator dashboard | A page where a person sets, changes and pauses limits and approves unusual payments. | [`apps/dashboard`](./apps/dashboard) | Planned |
-| Audit trail | A signed receipt for every decision, with its hash in a transaction memo when a transaction is sent. | [`packages/kitro/src/audit`](./packages/kitro/src/audit) | Planned |
-| Example agent | An agent that reads invoices and requests payments. | [`apps/agent`](./apps/agent) | Planned |
+| Component                | Description                                                                                          | Location                                                           | Status     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
+| Mandate format           | A signed list of limits: per-payment cap, daily total, allowed payees, escrow rules.                 | [`docs/TECHNICAL_SPEC.md`](./docs/TECHNICAL_SPEC.md)               | Planned    |
+| Policy service           | An independent service that checks each request against the mandate and co-signs or refuses.         | [`apps/policy-service`](./apps/policy-service)                     | Scaffolded |
+| Budget channels          | Helpers to create, fund and close one Payment Channel per routine supplier, and to sign claims.      | [`packages/xrpl/src/channels.ts`](./packages/xrpl/src/channels.ts) | Planned    |
+| Escrow for new suppliers | Create, finish and cancel conditional escrows, with a pluggable delivery verifier.                   | [`packages/xrpl/src/escrow.ts`](./packages/xrpl/src/escrow.ts)     | Planned    |
+| Operator dashboard       | A page where a person sets, changes and pauses limits and approves unusual payments.                 | [`apps/dashboard`](./apps/dashboard)                               | Scaffolded |
+| Audit trail              | A signed receipt for every decision, with its hash in a transaction memo when a transaction is sent. | [`packages/core/src/receipt.ts`](./packages/core/src/receipt.ts)   | Planned    |
+| Example agent            | An agent that reads invoices and requests payments.                                                  | [`apps/agent`](./apps/agent)                                       | Scaffolded |
 
 Change each status to `In progress` or `Testnet-verified` only after you have run it on testnet.
 
@@ -104,15 +104,15 @@ The operator signs a mandate with their own key. The policy service accepts only
 
 The policy service checks every request against these rules:
 
-| Check | Result if it fails |
-| --- | --- |
-| Mandate signature valid and not older than the stored one | Refuse everything |
-| Service is not paused | Refuse |
-| Payee is on the allowed list | Route to escrow, or refuse if `newPayeeRoute` is `refuse` |
-| Amount is at or below the per-payment cap | Refuse |
-| Amount plus today's total is at or below the daily cap | Refuse |
-| Amount is at or below the approval threshold | Hold for the operator |
-| Escrow lock time is within `escrowMaxLockSeconds` | Refuse |
+| Check                                                     | Result if it fails                                        |
+| --------------------------------------------------------- | --------------------------------------------------------- |
+| Mandate signature valid and not older than the stored one | Refuse everything                                         |
+| Service is not paused                                     | Refuse                                                    |
+| Payee is on the allowed list                              | Route to escrow, or refuse if `newPayeeRoute` is `refuse` |
+| Amount is at or below the per-payment cap                 | Refuse                                                    |
+| Amount plus today's total is at or below the daily cap    | Refuse                                                    |
+| Amount is at or below the approval threshold              | Hold for the operator                                     |
+| Escrow lock time is within `escrowMaxLockSeconds`         | Refuse                                                    |
 
 [Add or remove checks to match what you build.]
 
@@ -123,11 +123,11 @@ The packages aren't published yet. Build from source:
 ```bash
 git clone https://github.com/heyrapto/kitro
 cd kitro
-npm install
-npm build
+pnpm install
+pnpm build
 ```
 
-Requirements: Node.js 22 or later, pnpm. Runtime dependency: `xrpl` [version]. [List any others.]
+Requirements: Node.js 22 or later, pnpm 10 or later. Runtime dependency: `xrpl` 5.x (see `packages/xrpl/package.json`).
 
 ## Usage
 
@@ -166,16 +166,16 @@ const decision = await kitro.requestPayment({
 
 **Policy service** ([`apps/policy-service`](./apps/policy-service)), planned design:
 
-| Route | Purpose | Called by |
-| --- | --- | --- |
-| `POST /mandate` | Submit a new signed mandate | Operator |
-| `GET /mandate` | Read the active mandate | Anyone |
-| `POST /requests` | Request a payment | Agent |
-| `GET /requests/:id` | Status: `paid`, `escrowed`, `needs_approval`, `refused` | Agent, operator |
-| `POST /requests/:id/approve` | Approve a held payment | Operator (authenticated) |
-| `POST /requests/:id/reject` | Reject a held payment | Operator (authenticated) |
-| `POST /pause` | Stop all co-signing immediately | Operator (authenticated) |
-| `GET /decisions` | Signed decision receipts | Operator, auditors |
+| Route                        | Purpose                                                 | Called by                |
+| ---------------------------- | ------------------------------------------------------- | ------------------------ |
+| `POST /mandate`              | Submit a new signed mandate                             | Operator                 |
+| `GET /mandate`               | Read the active mandate                                 | Anyone                   |
+| `POST /requests`             | Request a payment                                       | Agent                    |
+| `GET /requests/:id`          | Status: `paid`, `escrowed`, `needs_approval`, `refused` | Agent, operator          |
+| `POST /requests/:id/approve` | Approve a held payment                                  | Operator (authenticated) |
+| `POST /requests/:id/reject`  | Reject a held payment                                   | Operator (authenticated) |
+| `POST /pause`                | Stop all co-signing immediately                         | Operator (authenticated) |
+| `GET /decisions`             | Signed decision receipts                                | Operator, auditors       |
 
 ## Security model
 
@@ -192,7 +192,7 @@ const decision = await kitro.requestPayment({
 
 - **XRP only at first.** RLUSD and MPT support are planned, not built.
 - **One channel per routine supplier.** A channel has a single fixed payee, so a business with many suppliers opens many channels, and each holds an owner reserve.
-- **Daily totals are enforced by the policy service, not the ledger.** The ledger enforces the channel cap, the payee and the signature rules. If the policy service is compromised *and* the agent key is stolen, both could sign, so run the service separately and watch its logs.
+- **Daily totals are enforced by the policy service, not the ledger.** The ledger enforces the channel cap, the payee and the signature rules. If the policy service is compromised _and_ the agent key is stolen, both could sign, so run the service separately and watch its logs.
 - **Rejected payments leave no transaction.** Refusals are recorded in signed receipts, not on the ledger.
 - **Escrow refunds wait for the deadline.** XRPL can't cancel an escrow before `CancelAfter`.
 - **Multisig costs more.** A multisigned transaction pays a higher fee than a single-signed one.
@@ -203,34 +203,39 @@ const decision = await kitro.requestPayment({
 ## Repository layout
 
 ```
-packages/kitro/        library: channels, escrow, multisig helpers, mandate, audit
-apps/policy-service/   independent co-signing service
-apps/dashboard/        operator page: limits, approvals, pause
+apps/dashboard/        Next.js operator dashboard
+apps/policy-service/   independent co-signing service (Hono)
 apps/agent/            example agent that requests payments
-specs/                 mandate format and rules
+packages/core/         shared types, zod schemas, mandates, receipts
+packages/rules/        pure policy engine
+packages/xrpl/         ledger helpers: channels, multisig, escrow, memos
+packages/client/       SDK the agent uses
+packages/db/           Drizzle schema and migrations
 scripts/               testnet setup and end-to-end scenarios
-docs/                  pitch notes
+docs/                  design docs and ADRs
 ```
 
 ## Development
 
 ```bash
-npm install
-npm check                    # lint, typecheck, build, unit tests
+pnpm install
+pnpm check                   # lint, typecheck, build, unit tests
+pnpm dev                     # dashboard, policy service and agent
+pnpm dev:dashboard           # only the dashboard
 ```
 
 End-to-end on testnet. The setup script should create and fund throwaway testnet wallets (operator, agent, policy service, supplier) and write their seeds to a gitignored `.env`:
 
 ```bash
-npm testnet:setup
-npm testnet:e2e              # routine payment, blocked overspend, new-supplier escrow, limit change
+pnpm testnet:setup
+pnpm testnet:e2e             # routine payment, blocked overspend, new-supplier escrow, limit change
 ```
 
 The end-to-end run should show four results, each a public testnet transaction (or a signed refusal): a routine payment goes through, an overspend is refused, a new supplier is paid through escrow after delivery, and the same payment clears after the operator raises the limit. [Add the real script names and transaction links once they exist.]
 
 ## Contributing
 
-Changes land through pull requests against `main`. Record design decisions with a date, a reason and an owner in `DECISIONS.md`. Never commit wallet seeds.
+Changes land through pull requests against `main`. Record design decisions in [`docs/adr/`](./docs/adr). Never commit wallet seeds.
 
 ## License and acknowledgments
 

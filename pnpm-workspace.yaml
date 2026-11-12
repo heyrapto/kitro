@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "scripts"
+allowBuilds:
+  # Optional native dependency of five-bells-condition. We only use its pure-JS
+  # SHA-256 condition helpers, and this addon does not compile on Node 24.
+  ed25519: false
+  esbuild: true

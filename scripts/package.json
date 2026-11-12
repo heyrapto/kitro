@@ -1,0 +1,19 @@
+{
+  "name": "@kitro/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup-testnet": "tsx setup-testnet.ts",
+    "e2e": "tsx e2e.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@kitro/core": "workspace:*",
+    "@kitro/xrpl": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}
