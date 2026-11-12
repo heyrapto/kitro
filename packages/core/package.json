@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./mandate": "./src/mandate.ts",
+    "./reasons": "./src/reasons.ts",
     "./request": "./src/request.ts",
     "./receipt": "./src/receipt.ts"
   },

@@ -1,18 +1,7 @@
-import type { Mandate } from "@kitro/core";
+import type { Mandate, Reason } from "@kitro/core";
 
-export const REASON_CODES = [
-  "NO_MANDATE",
-  "PAUSED",
-  "DUPLICATE_INVOICE",
-  "BAD_AMOUNT",
-  "OVER_PER_PAYMENT_CAP",
-  "OVER_DAILY_CAP",
-  "PAYEE_ADDRESS_CHANGED",
-  "NEEDS_APPROVAL_AMOUNT",
-  "PAYEE_NOT_ALLOWED",
-] as const;
-
-export type Reason = (typeof REASON_CODES)[number];
+export { REASON_CODES } from "@kitro/core";
+export type { Reason } from "@kitro/core";
 
 export type Decision =
   | { outcome: "refuse"; reasons: Reason[] }
