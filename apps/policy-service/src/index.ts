@@ -1,12 +1,9 @@
 import { serve } from "@hono/node-server";
-import { Hono } from "hono";
 import pino from "pino";
+import { createPolicyApp } from "./app";
 
 const logger = pino({ name: "kitro-policy-service" });
-
-const app = new Hono();
-
-app.get("/health", (c) => c.json({ ok: true, service: "kitro-policy-service" }));
+const app = createPolicyApp();
 
 const port = Number(process.env.PORT ?? 8787);
 
