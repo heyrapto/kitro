@@ -22,9 +22,9 @@ type MandateData = {
 
 const DEFAULT_MANDATE: MandateData = {
   version: 1,
-  operator: "rOperatorAddressExample1234567890",
-  network: "xrpl:1",
-  treasury: "rTreasuryAccountDemoTestnet12345678",
+  operator: "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
+  network: "XRPL Testnet (s.altnet.rippletest.net)",
+  treasury: "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
   perPaymentMaxDrops: "1000000", // 1 XRP
   dailyMaxDrops: "5000000",      // 5 XRP
   requireApprovalAboveDrops: "500000", // 0.5 XRP
@@ -57,7 +57,7 @@ export default function PolicyPage() {
           }
         }
       } catch {
-        // fallback
+        // fallback to default
       }
     }
     load();
@@ -82,7 +82,7 @@ export default function PolicyPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col font-sans">
       <Header
         title="Treasury Policies & Mandates"
         subtitle="Cryptographically signed financial bounds enforced independently of the agent"
@@ -99,9 +99,7 @@ export default function PolicyPage() {
         <div className="p-4 rounded-lg border border-border bg-muted/20 text-xs text-muted-foreground flex items-center gap-3">
           <Lock className="w-4 h-4 text-foreground shrink-0" />
           <span>
-            <strong>Immutability Guarantee:</strong> Mandate versions cannot be mutated in place.
-            Any adjustment increments the version number and requires a cryptographic signature from
-            the operator wallet.
+            <strong className="text-foreground">Immutability Guarantee:</strong> Mandate versions cannot be mutated in place. Any adjustment increments the version number and requires a cryptographic signature from the operator wallet.
           </span>
         </div>
 

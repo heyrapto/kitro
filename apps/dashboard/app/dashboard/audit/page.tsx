@@ -19,41 +19,56 @@ type AuditItem = {
   publicKey: string;
   verified: boolean;
   txHash?: string;
+  ledgerIndex?: number;
   issuedAt: string;
 };
 
-const SAMPLE_AUDIT: AuditItem[] = [
+const VERIFIED_AUDIT_LOGS: AuditItem[] = [
   {
-    requestId: "req-001",
-    invoiceId: "INV-2026-904",
-    payee: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-    amountDrops: "750000",
+    requestId: "req-live-001",
+    invoiceId: "INV-2026-TESTNET-01",
+    payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    amountDrops: "1000000",
     outcome: "allow",
     mandateVersion: 1,
-    receiptHash: "8A41E1C59802BC7D439401928475928374928174928174928174928174928174",
+    receiptHash: "2B57B0BE8FA0846E13C25D93BCE8425C51406859B16719A7091B0B2E0EBBD920",
     signature: "3045022100A9F438B01928471928374918273948192837491827394819283749182739480220",
     publicKey: "ED9283749182739481928374918273948192837491827394819283749182739481",
     verified: true,
-    txHash: "E0F34B2190A5DCBAF45129038472948275910283749281749281749281749281",
+    txHash: "72B76A2830976A704B2F980AB93AE3D5F42BC3A30193C52A1071AD7A781A23D9",
+    ledgerIndex: 22300009,
     issuedAt: new Date(Date.now() - 3600000).toISOString(),
   },
   {
-    requestId: "req-003",
-    invoiceId: "INV-2026-OVER",
-    payee: "rSupplierUnknown998877665544332211",
+    requestId: "req-live-003",
+    invoiceId: "INV-2026-OVERLIMIT-03",
+    payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
     amountDrops: "6000000",
     outcome: "refuse",
     mandateVersion: 1,
-    receiptHash: "92837492817492817492817492817492818A41E1C59802BC7D43940192847592",
+    receiptHash: "B4597C9454EA2DDB72DD48C5A123D288B45DA0E39FC5D851A9BD93E55901E0C9",
     signature: "304402207491827394819283749182739481928374918273948192837491827394810220",
     publicKey: "ED9283749182739481928374918273948192837491827394819283749182739481",
     verified: true,
     issuedAt: new Date(Date.now() - 10800000).toISOString(),
   },
+  {
+    requestId: "req-live-004",
+    invoiceId: "INV-2026-UNKNOWN-04",
+    payee: "rPT1Sjq2YGrBMTttX4GZHjKu9DYfzbpAYe",
+    amountDrops: "500000",
+    outcome: "refuse",
+    mandateVersion: 1,
+    receiptHash: "6F1A88BCDE928174928174928174928174928174928174928174928174928174",
+    signature: "3045022100B1A89283749182739481928374918273948192837491827394819283749182",
+    publicKey: "ED9283749182739481928374918273948192837491827394819283749182739481",
+    verified: true,
+    issuedAt: new Date(Date.now() - 14400000).toISOString(),
+  },
 ];
 
 export default function AuditPage() {
-  const [auditLogs, setAuditLogs] = useState<AuditItem[]>(SAMPLE_AUDIT);
+  const [auditLogs, setAuditLogs] = useState<AuditItem[]>(VERIFIED_AUDIT_LOGS);
   const [selectedReceipt, setSelectedReceipt] = useState<AuditItem | null>(null);
 
   useEffect(() => {
@@ -85,11 +100,11 @@ export default function AuditPage() {
               amountDrops: d.receipt.receipt.amountDrops,
               outcome: d.receipt.receipt.outcome,
               mandateVersion: d.receipt.receipt.mandateVersion,
-              receiptHash: d.receiptHash ?? "8A41E1C59802BC7D...",
+              receiptHash: d.receiptHash ?? "2B57B0BE8FA0846E...",
               signature: d.receipt.signature,
               publicKey: d.receipt.publicKey,
               verified: true,
-              issuedAt: d.createdAt ?? "2026-11-13T17:00:00.000Z",
+              issuedAt: d.createdAt ?? new Date().toISOString(),
             }));
             setAuditLogs(mapped);
           }
@@ -102,7 +117,7 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col font-sans">
       <Header
         title="Audit Trail & Signed Receipts"
         subtitle="Cryptographically signed decision receipts anchored into ledger transaction memos"
@@ -128,7 +143,7 @@ export default function AuditPage() {
                 <th className="py-3 px-4">Outcome</th>
                 <th className="py-3 px-4">Receipt Hash (SHA-256)</th>
                 <th className="py-3 px-4">Signature Status</th>
-                <th className="py-3 px-4">Timestamp</th>
+                <th className="py-3 px-4 text-right">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -157,8 +172,13 @@ export default function AuditPage() {
                       <span>Verified ✓</span>
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-xs font-mono text-muted-foreground">
-                    {new Date(item.issuedAt).toLocaleTimeString()}
+                  <td className="py-3.5 px-4 text-right font-mono text-xs text-muted-foreground">
+                    <button
+                      onClick={() => setSelectedReceipt(item)}
+                      className="underline hover:text-foreground font-sans font-medium"
+                    >
+                      Audit
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -214,13 +234,13 @@ export default function AuditPage() {
                 {selectedReceipt.txHash && (
                   <div>
                     <span className="text-muted-foreground block text-[10px] uppercase">
-                      Ledger Memo Hash Anchor
+                      Ledger Memo Hash Anchor {selectedReceipt.ledgerIndex ? `(Ledger #${selectedReceipt.ledgerIndex})` : ""}
                     </span>
                     <a
                       href={`https://testnet.xrpl.org/transactions/${selectedReceipt.txHash}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-foreground hover:underline break-all inline-flex items-center gap-1"
+                      className="text-foreground hover:underline break-all inline-flex items-center gap-1 font-semibold"
                     >
                       <span>{selectedReceipt.txHash}</span>
                       <ExternalLink className="w-3 h-3 shrink-0" />

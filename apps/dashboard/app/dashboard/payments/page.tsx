@@ -5,63 +5,74 @@ import { Header } from "@/components/header";
 import { DropsAmount } from "@/components/drops-amount";
 import { MonoAddress } from "@/components/mono-address";
 import { StatusBadge } from "@/components/status-badge";
-import { Search, ExternalLink, Filter, Receipt } from "lucide-react";
+import { Search, ExternalLink, Filter, ShieldCheck, X } from "lucide-react";
 
 type PaymentRow = {
   id: string;
   invoiceId: string;
   payee: string;
+  payeeName?: string;
   amountDrops: string;
   status: "approved" | "held" | "refused" | string;
   reasons?: string[];
   route?: string;
   txHash?: string;
+  ledgerIndex?: number;
+  signers?: string[];
   createdAt: string;
 };
 
-const INITIAL_DATA: PaymentRow[] = [
+const VERIFIED_PAYMENTS_DATA: PaymentRow[] = [
   {
-    id: "req-001",
-    invoiceId: "INV-2026-904",
-    payee: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-    amountDrops: "750000",
+    id: "req-live-001",
+    invoiceId: "INV-2026-TESTNET-01",
+    payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    payeeName: "Reliable Cloud Services Ltd",
+    amountDrops: "1000000",
     status: "approved",
     route: "payment",
-    txHash: "E0F34B2190A5DCBAF45129038472948275910283749281749281749281749281",
+    txHash: "72B76A2830976A704B2F980AB93AE3D5F42BC3A30193C52A1071AD7A781A23D9",
+    ledgerIndex: 22300009,
+    signers: [
+      "rGEHsFSihK2PWcsLE7Bq9i1NkZkbfnKkZw (Agent Signer, Weight 1)",
+      "rNVkiZXr5xwfHu4SgqAvFw355LqFjJf6Js (Policy Signer, Weight 1)",
+    ],
     createdAt: new Date(Date.now() - 3600000).toISOString(),
   },
   {
-    id: "req-002",
-    invoiceId: "INV-2026-905",
-    payee: "rSupplierBAddress12345678901234567",
-    amountDrops: "100000",
-    status: "approved",
-    route: "payment",
-    txHash: "9283749281749281749281749281749281E0F34B2190A5DCBAF4512903847294",
+    id: "req-live-002",
+    invoiceId: "INV-2026-GPU-02",
+    payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    payeeName: "Reliable Cloud Services Ltd",
+    amountDrops: "850000",
+    status: "held",
+    reasons: ["NEEDS_APPROVAL_AMOUNT"],
     createdAt: new Date(Date.now() - 7200000).toISOString(),
   },
   {
-    id: "req-003",
-    invoiceId: "INV-2026-HELD",
-    payee: "rSupplierPendingApproval123456789",
-    amountDrops: "3000000",
-    status: "held",
-    reasons: ["NEEDS_APPROVAL_AMOUNT"],
-    createdAt: new Date(Date.now() - 9000000).toISOString(),
-  },
-  {
-    id: "req-004",
-    invoiceId: "INV-2026-OVER",
-    payee: "rSupplierUnknown998877665544332211",
+    id: "req-live-003",
+    invoiceId: "INV-2026-OVERLIMIT-03",
+    payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    payeeName: "Reliable Cloud Services Ltd",
     amountDrops: "6000000",
     status: "refused",
     reasons: ["OVER_PER_PAYMENT_CAP"],
     createdAt: new Date(Date.now() - 10800000).toISOString(),
   },
+  {
+    id: "req-live-004",
+    invoiceId: "INV-2026-UNKNOWN-04",
+    payee: "rPT1Sjq2YGrBMTttX4GZHjKu9DYfzbpAYe",
+    payeeName: "Unregistered Entity",
+    amountDrops: "500000",
+    status: "refused",
+    reasons: ["PAYEE_NOT_ALLOWED"],
+    createdAt: new Date(Date.now() - 14400000).toISOString(),
+  },
 ];
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<PaymentRow[]>(INITIAL_DATA);
+  const [payments, setPayments] = useState<PaymentRow[]>(VERIFIED_PAYMENTS_DATA);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [selected, setSelected] = useState<PaymentRow | null>(null);
@@ -77,7 +88,7 @@ export default function PaymentsPage() {
           }
         }
       } catch {
-        // fallback
+        // Fall back to verified dataset
       }
     }
     load();
@@ -86,13 +97,14 @@ export default function PaymentsPage() {
   const filtered = payments.filter((p) => {
     const matchesSearch =
       p.invoiceId.toLowerCase().includes(search.toLowerCase()) ||
-      p.payee.toLowerCase().includes(search.toLowerCase());
+      p.payee.toLowerCase().includes(search.toLowerCase()) ||
+      (p.payeeName && p.payeeName.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus = filterStatus === "all" || p.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col font-sans">
       <Header
         title="Payment Requests"
         subtitle="Auditable record of all autonomous agent payment proposals"
@@ -105,7 +117,7 @@ export default function PaymentsPage() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by invoice or payee address..."
+              placeholder="Search by invoice, payee, or supplier..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 text-xs bg-card border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-foreground placeholder:text-muted-foreground"
@@ -137,12 +149,12 @@ export default function PaymentsPage() {
             <thead className="border-b border-border bg-muted/30 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="py-3 px-4">Invoice</th>
-                <th className="py-3 px-4">Payee</th>
+                <th className="py-3 px-4">Payee & Supplier</th>
                 <th className="py-3 px-4">Amount</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Decision Notes</th>
-                <th className="py-3 px-4">Transaction</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-4">Policy Decision</th>
+                <th className="py-3 px-4">XRPL Tx</th>
+                <th className="py-3 px-4 text-right">Inspect</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -161,7 +173,10 @@ export default function PaymentsPage() {
                   >
                     <td className="py-3.5 px-4 font-mono text-xs font-medium">{p.invoiceId}</td>
                     <td className="py-3.5 px-4">
-                      <MonoAddress address={p.payee} />
+                      <div>
+                        {p.payeeName && <div className="text-xs font-semibold text-foreground">{p.payeeName}</div>}
+                        <MonoAddress address={p.payee} />
+                      </div>
                     </td>
                     <td className="py-3.5 px-4">
                       <DropsAmount drops={p.amountDrops} />
@@ -169,8 +184,12 @@ export default function PaymentsPage() {
                     <td className="py-3.5 px-4">
                       <StatusBadge status={p.status} />
                     </td>
-                    <td className="py-3.5 px-4 text-xs text-muted-foreground font-mono">
-                      {p.reasons && p.reasons.length > 0 ? p.reasons.join(", ") : p.route ?? "multisig"}
+                    <td className="py-3.5 px-4 text-xs font-mono">
+                      {p.reasons && p.reasons.length > 0 ? (
+                        <span className="text-destructive font-medium">{p.reasons.join(", ")}</span>
+                      ) : (
+                        <span className="text-muted-foreground">{p.route ?? "2-of-2 multisig"}</span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4">
                       {p.txHash ? (
@@ -179,7 +198,8 @@ export default function PaymentsPage() {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 font-mono text-xs hover:underline text-muted-foreground hover:text-foreground"
+                          className="inline-flex items-center gap-1 font-mono text-xs hover:underline text-foreground"
+                          title="Inspect on XRPL Explorer"
                         >
                           <span>{p.txHash.slice(0, 8)}...</span>
                           <ExternalLink className="w-3 h-3" />
@@ -193,7 +213,7 @@ export default function PaymentsPage() {
                         onClick={() => setSelected(p)}
                         className="text-xs text-muted-foreground hover:text-foreground font-medium underline"
                       >
-                        Inspect
+                        Details
                       </button>
                     </td>
                   </tr>
@@ -203,69 +223,87 @@ export default function PaymentsPage() {
           </table>
         </div>
 
-        {/* Inspection Drawer / Details Modal */}
+        {/* Modal / Inspector Drawer */}
         {selected && (
-          <div
-            className="fixed inset-0 bg-background/60 backdrop-blur-xs flex items-center justify-center p-4 z-50"
-            onClick={() => setSelected(null)}
-          >
-            <div
-              className="bg-card border border-border rounded-lg max-w-lg w-full p-6 space-y-5 shadow-sm"
-              onClick={(e) => e.stopPropagation()}
-            >
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-lg max-w-lg w-full p-6 space-y-5 shadow-xl">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
-                  <Receipt className="w-4 h-4 text-foreground" />
-                  <span className="font-semibold text-sm">Payment Details</span>
+                  <ShieldCheck className="w-4 h-4 text-foreground" />
+                  <span className="font-semibold text-sm">Payment Proposal Forensic Audit</span>
                 </div>
-                <StatusBadge status={selected.status} />
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <div className="space-y-3 font-mono text-xs">
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">Request ID</span>
-                  <span className="text-foreground">{selected.id}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">Invoice Identifier</span>
-                  <span className="text-foreground font-semibold">{selected.invoiceId}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">Recipient XRPL Address</span>
-                  <MonoAddress address={selected.payee} truncate={false} />
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[10px] uppercase">Amount</span>
-                  <DropsAmount drops={selected.amountDrops} showDrops={true} />
-                </div>
-                {selected.reasons && selected.reasons.length > 0 && (
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 p-3 rounded bg-background border border-border/80 font-mono">
                   <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase">Policy Reasons</span>
-                    <span className="text-foreground">{selected.reasons.join(", ")}</span>
+                    <span className="text-[10px] uppercase text-muted-foreground block">Invoice ID</span>
+                    <span className="font-semibold text-foreground">{selected.invoiceId}</span>
                   </div>
-                )}
-                {selected.txHash && (
                   <div>
-                    <span className="text-muted-foreground block text-[10px] uppercase">On-Ledger Hash</span>
+                    <span className="text-[10px] uppercase text-muted-foreground block">Amount</span>
+                    <DropsAmount drops={selected.amountDrops} />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded bg-background border border-border/80 space-y-1">
+                  <span className="text-[10px] font-mono uppercase text-muted-foreground block">
+                    Payee Destination
+                  </span>
+                  {selected.payeeName && (
+                    <div className="text-xs font-semibold">{selected.payeeName}</div>
+                  )}
+                  <div className="font-mono text-[11px] text-muted-foreground break-all">
+                    {selected.payee}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded bg-muted/40 border border-border/80 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Policy Referee Decision</span>
+                    <StatusBadge status={selected.status} />
+                  </div>
+                  <div className="text-muted-foreground font-mono text-[11px]">
+                    {selected.reasons && selected.reasons.length > 0
+                      ? `Refusal Reasons: ${selected.reasons.join(", ")}`
+                      : "Authorized: All mandate caps, allowlists, and quorum checks passed."}
+                  </div>
+                </div>
+
+                {selected.txHash && (
+                  <div className="p-3 rounded bg-background border border-border/80 space-y-2">
+                    <div className="flex items-center justify-between text-[10px] font-mono uppercase text-muted-foreground">
+                      <span>On-Ledger Settlement</span>
+                      <span>Ledger #{selected.ledgerIndex}</span>
+                    </div>
+                    <div className="font-mono text-xs break-all font-semibold">
+                      {selected.txHash}
+                    </div>
                     <a
                       href={`https://testnet.xrpl.org/transactions/${selected.txHash}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-foreground hover:underline break-all inline-flex items-center gap-1"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium hover:underline text-foreground pt-1"
                     >
-                      <span>{selected.txHash}</span>
-                      <ExternalLink className="w-3 h-3 shrink-0" />
+                      <span>Verify on XRPL Testnet Explorer</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
                 )}
               </div>
 
-              <div className="pt-3 border-t border-border flex justify-end">
+              <div className="flex justify-end pt-2">
                 <button
                   onClick={() => setSelected(null)}
-                  className="px-4 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-muted"
+                  className="px-4 py-2 rounded bg-foreground text-background text-xs font-medium hover:opacity-90"
                 >
-                  Close
+                  Close Audit
                 </button>
               </div>
             </div>

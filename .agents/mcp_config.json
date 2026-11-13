@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "kitro": {
+      "command": "pnpm",
+      "args": ["--filter", "@kitro/mcp", "start"],
+      "env": {
+        "KITRO_API_URL": "http://localhost:8787"
+      }
+    }
+  }
+}

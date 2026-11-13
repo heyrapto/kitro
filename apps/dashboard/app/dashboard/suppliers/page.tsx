@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { MonoAddress } from "@/components/mono-address";
 import { StatusBadge } from "@/components/status-badge";
-import { Plus, UserCheck, ShieldCheck } from "lucide-react";
+import { Plus, UserCheck, ShieldCheck, ExternalLink } from "lucide-react";
 
 type Supplier = {
   address: string;
@@ -15,18 +15,18 @@ type Supplier = {
 
 const INITIAL_SUPPLIERS: Supplier[] = [
   {
-    address: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
-    name: "Apex Cloud Infrastructure Ltd.",
+    address: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    name: "Reliable Cloud Services Ltd",
     route: "payment",
   },
   {
-    address: "rSupplierBAddress12345678901234567",
-    name: "Global Fiber Bandwidth Corp",
+    address: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+    name: "Apex Network & Infrastructure Corp",
     route: "payment",
   },
   {
     address: "rChannelVendorAddress998877665544",
-    name: "FastPack Logistics Services",
+    name: "FastPack Real-Time Data Streaming",
     route: "channel",
   },
 ];
@@ -72,7 +72,7 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col font-sans">
       <Header
         title="Authorized Suppliers"
         subtitle="Allowlisted corporate payees configured in the treasury mandate"
@@ -94,7 +94,7 @@ export default function SuppliersPage() {
           </button>
         </div>
 
-        {/* Add Supplier Modal / Drawer */}
+        {/* Add Supplier Modal / Form */}
         {isAdding && (
           <form
             onSubmit={handleAddSupplier}
@@ -171,6 +171,7 @@ export default function SuppliersPage() {
                 <th className="py-3 px-4">XRPL Address</th>
                 <th className="py-3 px-4">Settlement Route</th>
                 <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Explorer</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -188,6 +189,17 @@ export default function SuppliersPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     <StatusBadge status="approved" />
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <a
+                      href={`https://testnet.xrpl.org/accounts/${s.address}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                    >
+                      <span>Inspect</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   </td>
                 </tr>
               ))}

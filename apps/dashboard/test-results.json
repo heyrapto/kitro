@@ -123,7 +123,7 @@
           "column": 6,
           "specs": [
             {
-              "title": "1. Landing page renders correct product positioning and navigates to dashboard",
+              "title": "1. Landing page renders correct product positioning and navigates to onboarding & dashboard",
               "ok": true,
               "tags": [],
               "tests": [
@@ -138,12 +138,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 9052,
+                      "duration": 23766,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:31:39.510Z",
+                      "startTime": "2026-11-13T22:04:51.058Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -151,13 +151,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-f11c994eb74c67015304",
+              "id": "b1c7859d981cc20c96be-9df356081fd517e68d74",
               "file": "e2e.spec.ts",
               "line": 4,
               "column": 3
             },
             {
-              "title": "2. Treasury overview displays balance, capacity, and active signers",
+              "title": "2. Onboarding wizard guides through 7 setup steps",
               "ok": true,
               "tags": [],
               "tests": [
@@ -172,12 +172,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5818,
+                      "duration": 8559,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:31:52.379Z",
+                      "startTime": "2026-11-13T22:05:20.882Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -185,13 +185,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-9dc9fc7df1422e2e2f45",
+              "id": "b1c7859d981cc20c96be-b6715f14d1646a88cf71",
               "file": "e2e.spec.ts",
-              "line": 21,
+              "line": 22,
               "column": 3
             },
             {
-              "title": "3. Invoices page extracts structured data from raw invoice and prepares payment request",
+              "title": "3. Treasury overview displays balance, capacity, and active signers",
               "ok": true,
               "tags": [],
               "tests": [
@@ -206,12 +206,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5093,
+                      "duration": 21426,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:31:58.967Z",
+                      "startTime": "2026-11-13T22:05:29.503Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -219,13 +219,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-dfbe45d8417739e0a427",
+              "id": "b1c7859d981cc20c96be-b9e91c81ce60b498a8f2",
               "file": "e2e.spec.ts",
-              "line": 38,
+              "line": 43,
               "column": 3
             },
             {
-              "title": "4. Approvals queue displays held payments requiring human operator authorization",
+              "title": "4. Invoices page extracts structured data and evaluates with policy referee",
               "ok": true,
               "tags": [],
               "tests": [
@@ -240,12 +240,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5638,
+                      "duration": 11278,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:32:04.476Z",
+                      "startTime": "2026-11-13T22:05:51.212Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -253,13 +253,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-11698d657f61a4568b54",
+              "id": "b1c7859d981cc20c96be-fc23bd0b12d1c9cd517d",
               "file": "e2e.spec.ts",
-              "line": 59,
+              "line": 60,
               "column": 3
             },
             {
-              "title": "5. Policy page displays active spending limits, caps, and allowlist rules",
+              "title": "5. Approvals queue displays held payments requiring human operator authorization",
               "ok": true,
               "tags": [],
               "tests": [
@@ -274,12 +274,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4075,
+                      "duration": 8979,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:32:10.422Z",
+                      "startTime": "2026-11-13T22:06:02.558Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -287,13 +287,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-fbb4c8c8f125d9e71ab3",
+              "id": "b1c7859d981cc20c96be-513c9391454e7f57d67f",
               "file": "e2e.spec.ts",
-              "line": 68,
+              "line": 81,
               "column": 3
             },
             {
-              "title": "6. Audit page displays cryptographic audit receipts and verifiable hashes",
+              "title": "6. Policy page displays active spending limits, caps, and allowlist rules",
               "ok": true,
               "tags": [],
               "tests": [
@@ -308,12 +308,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4705,
+                      "duration": 5957,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:32:14.768Z",
+                      "startTime": "2026-11-13T22:06:11.590Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -321,13 +321,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-28f29de6c5c3c7cf3fcd",
+              "id": "b1c7859d981cc20c96be-38c0500ffbdee4ce0b5e",
               "file": "e2e.spec.ts",
-              "line": 77,
+              "line": 90,
               "column": 3
             },
             {
-              "title": "7. Settings page displays network connection, multisig quorum, and integration information",
+              "title": "7. Audit page displays cryptographic audit receipts and verifiable hashes",
               "ok": true,
               "tags": [],
               "tests": [
@@ -342,12 +342,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2975,
+                      "duration": 10398,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T19:32:19.937Z",
+                      "startTime": "2026-11-13T22:06:17.620Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -355,9 +355,43 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-983c3068dd4d4e67bed4",
+              "id": "b1c7859d981cc20c96be-213465d21312bbc326e6",
               "file": "e2e.spec.ts",
-              "line": 85,
+              "line": 99,
+              "column": 3
+            },
+            {
+              "title": "8. Settings page displays network connection, multisig quorum, and integration information",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8792,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-13T22:06:28.070Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b1c7859d981cc20c96be-70f4f5dea096172dbf52",
+              "file": "e2e.spec.ts",
+              "line": 107,
               "column": 3
             }
           ]
@@ -367,9 +401,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-13T19:31:25.750Z",
-    "duration": 91764.12400000001,
-    "expected": 7,
+    "startTime": "2026-11-13T22:04:25.483Z",
+    "duration": 320006.239,
+    "expected": 8,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

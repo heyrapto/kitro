@@ -16,7 +16,13 @@ export default function HomePage() {
           </span>
         </div>
 
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-muted transition-colors"
+          >
+            <span>Guided Setup</span>
+          </Link>
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-foreground text-background text-xs font-medium hover:opacity-90 transition-opacity"
@@ -45,21 +51,27 @@ export default function HomePage() {
           service ensure no agent can ever authorize itself.
         </p>
 
-        <div className="mt-10 flex items-center justify-center gap-4">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/dashboard"
+            href="/onboarding"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            <span>Launch Treasury</span>
+            <span>Start Guided Setup</span>
             <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <span>Open Dashboard</span>
           </Link>
           <a
             href="https://testnet.xrpl.org"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-md border border-border bg-card text-sm font-medium hover:bg-muted transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-md text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
           >
-            <span>Inspect Testnet</span>
+            <span>testnet.xrpl.org ↗</span>
           </a>
         </div>
       </section>
