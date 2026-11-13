@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import { Header } from "@/components/header";
-import { DropsAmount } from "@/components/drops-amount";
-import { MonoAddress } from "@/components/mono-address";
 import { StatusBadge } from "@/components/status-badge";
 import {
   FileText,
   Sparkles,
-  ArrowRight,
   AlertCircle,
   CheckCircle2,
   Send,
@@ -26,11 +23,33 @@ Line Items:
 Total: 0.50 XRP (500,000 drops)
 Memo: CLOUD-NOVEMBER-2026`;
 
+type ExtractedData = {
+  invoiceId: string;
+  supplierName: string;
+  supplierXrplAddress: string;
+  amountDrops: string;
+  currency: string;
+  confidence: number;
+  uncertain: string[];
+  memo?: string;
+};
+
+type SubmissionResult = {
+  id?: string;
+  status?: string;
+  error?: string;
+  decision?: {
+    outcome: string;
+    reasons?: string[];
+    route?: string;
+  };
+};
+
 export default function InvoicesPage() {
   const [invoiceText, setInvoiceText] = useState(SAMPLE_INVOICE);
   const [extracting, setExtracting] = useState(false);
-  const [extracted, setExtracted] = useState<any | null>(null);
-  const [submissionResult, setSubmissionResult] = useState<any | null>(null);
+  const [extracted, setExtracted] = useState<ExtractedData | null>(null);
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Form edit states
@@ -270,7 +289,7 @@ export default function InvoicesPage() {
               <div>
                 <span className="text-muted-foreground text-[10px] uppercase block">Reasons</span>
                 <span className="text-foreground">
-                  {submissionResult.decision?.reasons?.length > 0
+                  {submissionResult.decision?.reasons && submissionResult.decision.reasons.length > 0
                     ? submissionResult.decision.reasons.join(", ")
                     : "ALL_CHECKS_PASSED"}
                 </span>

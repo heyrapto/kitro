@@ -131,8 +131,8 @@ export function signMultisig(
 ): { tx_blob: string; hash: string } {
   // Ensure SigningPubKey is empty and remove any prior signatures for multisigning
   const prepared = { ...tx, SigningPubKey: "" };
-  delete (prepared as any).Signers;
-  delete (prepared as any).TxnSignature;
+  delete (prepared as Record<string, unknown>).Signers;
+  delete (prepared as Record<string, unknown>).TxnSignature;
   return signerWallet.sign(prepared, true);
 }
 

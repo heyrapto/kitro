@@ -8,5 +8,5 @@
       "@kitro/xrpl": ["../packages/xrpl/src/index.ts"]
     }
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "../packages/xrpl/src/types/*.d.ts"]
 }

@@ -1,7 +1,7 @@
 import { deriveAddress, deriveKeypair, generateSeed, sign } from "ripple-keypairs";
 import { describe, expect, it } from "vitest";
 import { verifyReceipt, signMandate, type Mandate } from "@kitro/core";
-import { Wallet } from "@kitro/xrpl";
+import { Wallet, type Payment } from "@kitro/xrpl";
 import { createPolicyApp } from "./app";
 import { OperatorAuth } from "./operator-auth";
 import { MemoryPolicyStore } from "./store";
@@ -174,7 +174,7 @@ describe("policy routes", () => {
     const { app, treasury } = await authenticatedApp();
     const res = await app.request("/treasury");
     expect(res.status).toBe(200);
-    const json = (await res.json()) as any;
+    const json = (await res.json()) as Record<string, unknown>;
     expect(json.treasuryAddress).toBe(treasury.address);
     expect(json.mandateStatus).toBe("active");
     expect(json.dailyMaxDrops).toBe("7000000");
@@ -184,9 +184,9 @@ describe("policy routes", () => {
     const { app, supplier } = await authenticatedApp();
     const res = await app.request("/suppliers");
     expect(res.status).toBe(200);
-    const json = (await res.json()) as any;
+    const json = (await res.json()) as { suppliers: Array<{ address: string }> };
     expect(json.suppliers).toHaveLength(1);
-    expect(json.suppliers[0].address).toBe(supplier.address);
+    expect(json.suppliers[0]?.address).toBe(supplier.address);
   });
 
   it("handles multisig co-signing endpoint", async () => {
@@ -204,7 +204,7 @@ describe("policy routes", () => {
       }),
     });
     expect(createRes.status).toBe(201);
-    const reqJson = (await createRes.json()) as any;
+    const reqJson = (await createRes.json()) as { id: string; status: string };
     expect(reqJson.status).toBe("approved");
 
     // 2. Reject if agent submits mismatched transaction
@@ -219,7 +219,7 @@ describe("policy routes", () => {
       Sequence: 1,
       SigningPubKey: "",
     };
-    const signedWrongBlob = agentWallet.sign(wrongTx as any, true).tx_blob;
+    const signedWrongBlob = agentWallet.sign(wrongTx as unknown as Payment, true).tx_blob;
 
     const badSignRes = await app.request(`/requests/${reqJson.id}/sign`, {
       method: "POST",
@@ -238,7 +238,7 @@ describe("policy routes", () => {
       Sequence: 1,
       SigningPubKey: "",
     };
-    const correctSignedBlob = agentWallet.sign(correctTx as any, true).tx_blob;
+    const correctSignedBlob = agentWallet.sign(correctTx as unknown as Payment, true).tx_blob;
 
     const signRes = await app.request(`/requests/${reqJson.id}/sign`, {
       method: "POST",
@@ -246,7 +246,7 @@ describe("policy routes", () => {
       body: JSON.stringify({ agentSignedBlob: correctSignedBlob }),
     });
     expect(signRes.status).toBe(200);
-    const signJson = (await signRes.json()) as any;
+    const signJson = (await signRes.json()) as { status: string; txHash: string };
     expect(signJson.status).toBe("paid");
     expect(signJson.txHash).toBeTypeOf("string");
   });

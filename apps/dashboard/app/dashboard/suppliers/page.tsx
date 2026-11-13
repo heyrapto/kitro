@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { MonoAddress } from "@/components/mono-address";
 import { StatusBadge } from "@/components/status-badge";
-import { Users, Plus, UserCheck, ShieldCheck } from "lucide-react";
+import { Plus, UserCheck, ShieldCheck } from "lucide-react";
 
 type Supplier = {
   address: string;
@@ -136,7 +136,7 @@ export default function SuppliersPage() {
               </label>
               <select
                 value={route}
-                onChange={(e) => setRoute(e.target.value as any)}
+                onChange={(e) => setRoute(e.target.value as "payment" | "channel")}
                 className="w-full p-2 bg-background border border-border rounded text-xs"
               >
                 <option value="payment">Direct 2-of-2 Multisig Payment</option>

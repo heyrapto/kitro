@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Wallet, type Payment } from "xrpl";
+import { Wallet, type Payment, type Client } from "xrpl";
 import {
   combineMultisig,
   configureSignerList,
@@ -52,7 +52,7 @@ describe("multisig helpers", () => {
   });
 
   it("prepareMultisigPayment rejects non-positive or decimal amounts", async () => {
-    const fakeClient = {} as any;
+    const fakeClient = {} as unknown as Client;
     await expect(
       prepareMultisigPayment(fakeClient, "rTreasury", "rDest", "0"),
     ).rejects.toThrow("Amount must be a positive integer");
@@ -65,7 +65,7 @@ describe("multisig helpers", () => {
   });
 
   it("configureSignerList rejects treasury in signer entries or non-positive quorum", async () => {
-    const fakeClient = {} as any;
+    const fakeClient = {} as unknown as Client;
     const treasury = Wallet.generate();
 
     await expect(

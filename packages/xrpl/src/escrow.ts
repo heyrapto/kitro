@@ -1,4 +1,3 @@
-/// <reference path="./types/five-bells-condition.d.ts" />
 import { randomBytes } from "node:crypto";
 import cc from "five-bells-condition";
 import type { EscrowCancel, EscrowCreate, EscrowFinish } from "xrpl";

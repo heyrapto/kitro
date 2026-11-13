@@ -14,6 +14,7 @@
     "@ai-sdk/anthropic": "^4.0.102",
     "@kitro/client": "workspace:*",
     "@kitro/core": "workspace:*",
+    "@kitro/rules": "workspace:*",
     "ai": "^7.0.169",
     "zod": "^4.6.7"
   },

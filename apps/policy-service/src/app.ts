@@ -254,9 +254,9 @@ export function createPolicyApp(
     }
 
     // Decode and verify the agent's proposed transaction
-    let decodedTx: any;
+    let decodedTx: Record<string, unknown>;
     try {
-      decodedTx = decode(agentSignedBlob);
+      decodedTx = decode(agentSignedBlob) as Record<string, unknown>;
     } catch {
       return c.json({ error: "invalid transaction blob" }, 400);
     }
@@ -308,11 +308,12 @@ export function createPolicyApp(
         txHash = submitResult.hash;
         ledgerIndex = submitResult.ledger_index;
         await client.disconnect();
-      } catch (submitErr: any) {
+      } catch (submitErr: unknown) {
+        const errorMsg = submitErr instanceof Error ? submitErr.message : String(submitErr);
         return c.json(
           {
             error: "multisig submission failed",
-            details: submitErr.message,
+            details: errorMsg,
             txBlob: combinedBlob,
           },
           502,

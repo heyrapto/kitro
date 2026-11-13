@@ -31,8 +31,9 @@ async function fundWalletSafe(client: Client, label: string): Promise<Wallet> {
     });
     console.log(`✓ Funded! Balance: ${balance} XRP (${wallet.classicAddress})`);
     return wallet;
-  } catch (err: any) {
-    console.log(`✗ Faucet error: ${err.message}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.log(`✗ Faucet error: ${errorMsg}`);
     console.log(`\nManual recovery: please generate and fund a wallet at:`);
     console.log(`  https://testnet.xrpl.org/resources/faucet`);
     throw err;

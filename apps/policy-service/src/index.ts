@@ -15,9 +15,10 @@ if (dbUrl) {
     const db = createDb(dbUrl);
     store = new DbPolicyStore(db);
     logger.info("Using PostgreSQL DbPolicyStore for durable state persistence");
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     logger.warn(
-      { err: err.message },
+      { err: errorMsg },
       "Could not initialize PostgreSQL store; falling back to in-memory store",
     );
   }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Header } from "@/components/header";
-import { MonoAddress } from "@/components/mono-address";
 import { Terminal, Shield, Key, Copy, Check } from "lucide-react";
 
 export default function SettingsPage() {

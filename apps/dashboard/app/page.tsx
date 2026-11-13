@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Cpu, Landmark, Lock, CheckCircle2, Terminal } from "lucide-react";
+import { ArrowRight, ShieldCheck, Cpu, Landmark, Lock, CheckCircle2 } from "lucide-react";
 
 export default function HomePage() {
   return (

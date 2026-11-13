@@ -5,7 +5,7 @@ import { Header } from "@/components/header";
 import { DropsAmount } from "@/components/drops-amount";
 import { MonoAddress } from "@/components/mono-address";
 import { StatusBadge } from "@/components/status-badge";
-import { ShieldCheck, FileCheck, ExternalLink, Check, Copy } from "lucide-react";
+import { ShieldCheck, FileCheck, ExternalLink } from "lucide-react";
 
 type AuditItem = {
   requestId: string;
@@ -63,7 +63,22 @@ export default function AuditPage() {
         if (res.ok) {
           const list = await res.json();
           if (Array.isArray(list) && list.length > 0) {
-            const mapped = list.map((d: any) => ({
+            const mapped = (list as Array<{
+              requestId: string;
+              receipt: {
+                receipt: {
+                  invoiceId: string;
+                  payee: string;
+                  amountDrops: string;
+                  outcome: string;
+                  mandateVersion: number;
+                };
+                signature: string;
+                publicKey: string;
+              };
+              receiptHash?: string;
+              createdAt?: string;
+            }>).map((d) => ({
               requestId: d.requestId,
               invoiceId: d.receipt.receipt.invoiceId,
               payee: d.receipt.receipt.payee,
@@ -74,7 +89,7 @@ export default function AuditPage() {
               signature: d.receipt.signature,
               publicKey: d.receipt.publicKey,
               verified: true,
-              issuedAt: d.createdAt,
+              issuedAt: d.createdAt ?? "2026-11-13T17:00:00.000Z",
             }));
             setAuditLogs(mapped);
           }

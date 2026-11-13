@@ -11,7 +11,7 @@ import {
 } from "@kitro/db";
 import type { MandateEnvelope, PaymentRequest, ReceiptEnvelope } from "@kitro/core";
 import { receiptHash } from "@kitro/core";
-import type { Decision } from "@kitro/rules";
+import type { Decision, Reason } from "@kitro/rules";
 import type {
   PolicyStore,
   RequestStatus,
@@ -40,7 +40,7 @@ export class DbPolicyStore implements PolicyStore {
     const row = rows[0];
 
     return {
-      mandate: row.body as any,
+      mandate: row.body as unknown as MandateEnvelope["mandate"],
       publicKey: row.publicKey,
       signature: row.signature,
     };
@@ -218,10 +218,10 @@ export class DbPolicyStore implements PolicyStore {
 
     const decision: Decision =
       decRow.outcome === "allow"
-        ? { outcome: "allow", route: (row.route as any) ?? "payment" }
+        ? { outcome: "allow", route: (row.route as "payment" | "channel" | "escrow" | null) ?? "payment" }
         : decRow.outcome === "hold"
-          ? { outcome: "hold", reasons: decRow.reasons as any }
-          : { outcome: "refuse", reasons: decRow.reasons as any };
+          ? { outcome: "hold", reasons: (decRow.reasons as Reason[]) ?? [] }
+          : { outcome: "refuse", reasons: (decRow.reasons as Reason[]) ?? [] };
 
     const body: PaymentRequest = {
       invoiceId: row.invoiceId,
@@ -234,7 +234,7 @@ export class DbPolicyStore implements PolicyStore {
       id: row.id,
       body,
       status: row.status as RequestStatus,
-      route: (row.route as any) ?? undefined,
+      route: (row.route as "payment" | "channel" | "escrow" | null) ?? undefined,
       decision,
       mandateVersion: decRow.mandateVersion,
       receipt: receiptEnv,

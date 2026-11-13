@@ -13,9 +13,7 @@ import { evaluate } from "@kitro/rules";
 import {
   type Mandate,
   receiptHash,
-  signReceipt,
   type Receipt,
-  verifyReceipt,
 } from "@kitro/core";
 
 const TESTNET_URL = process.env.XRPL_URL ?? "wss://s.altnet.rippletest.net:51233";
@@ -171,8 +169,9 @@ async function main() {
     // Submit only agent's signature blob
     await client.submitAndWait(rogueAgentSigned.tx_blob);
     console.error("❌ FAILED: Rogue transaction should have been rejected by ledger!");
-  } catch (err: any) {
-    console.log(`✓ REJECTED by XRPL: ${err.message}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.log(`✓ REJECTED by XRPL: ${errorMsg}`);
     console.log("✓ Ledger strictly enforces quorum 2: Agent CANNOT move money alone!\n");
   }
 

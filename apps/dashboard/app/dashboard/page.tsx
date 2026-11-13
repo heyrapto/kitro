@@ -9,13 +9,11 @@ import { StatusBadge } from "@/components/status-badge";
 import {
   Wallet,
   TrendingDown,
-  Clock,
   ShieldCheck,
   ArrowRight,
   ExternalLink,
   PauseCircle,
   PlayCircle,
-  RefreshCw,
 } from "lucide-react";
 
 type TreasuryInfo = {
@@ -50,7 +48,7 @@ export default function DashboardOverviewPage() {
     remainingCapacityDrops: "4150000",
   });
 
-  const [requests, setRequests] = useState<PaymentRequestItem[]>([
+  const [requests] = useState<PaymentRequestItem[]>([
     {
       id: "req-001",
       invoiceId: "INV-2026-904",

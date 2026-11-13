@@ -37,9 +37,14 @@ export type ExtractedInvoice = z.infer<typeof ExtractedInvoice>;
 function extractWithRules(text: string): ExtractedInvoice {
   // 1. Invoice ID
   const invMatch =
-    text.match(/(?:invoice|inv|bill)[\s#:]*([a-z0-9-_]+)/i) ??
+    text.match(/\bINV-[A-Z0-9-]+\b/i) ??
+    text.match(/(?:invoice|inv|bill)\s*(?:#|number|num)?[:\s]+([a-z0-9-_]+)/i) ??
     text.match(/#([a-z0-9-_]{4,})/i);
-  const invoiceId = invMatch?.[1] ? invMatch[1].toUpperCase() : "INV-UNKNOWN";
+  const invoiceId = invMatch?.[1]
+    ? invMatch[1].toUpperCase()
+    : invMatch?.[0]
+      ? invMatch[0].toUpperCase()
+      : "INV-UNKNOWN";
 
   // 2. XRPL Address (starts with r, 25-35 base58 alphanumeric chars)
   const xrplMatch = text.match(/\b(r[1-9A-HJ-NP-Za-km-z]{24,34})\b/);
@@ -77,6 +82,12 @@ function extractWithRules(text: string): ExtractedInvoice {
   if (!supplierXrplAddress) uncertain.push("supplierXrplAddress");
   if (!amountDrops) uncertain.push("amountDrops");
   if (invoiceId === "INV-UNKNOWN") uncertain.push("invoiceId");
+  if (/\b(?:usd|eur|gbp|\$|€|£)\b/i.test(text) && /\bxrp\b/i.test(text)) {
+    uncertain.push("ambiguous_currency");
+  }
+  if (/\b(?:estimate|quote|statement|proforma|draft)\b/i.test(text)) {
+    uncertain.push("non_standard_document_type");
+  }
 
   return {
     invoiceId,
@@ -125,8 +136,9 @@ ${invoiceText}`,
     });
 
     return object;
-  } catch (err: any) {
-    console.warn(`[extractInvoice] Anthropic extraction failed: ${err.message}. Using rule fallback.`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.warn(`[extractInvoice] Anthropic extraction failed: ${errorMsg}. Using rule fallback.`);
     return extractWithRules(invoiceText);
   }
 }

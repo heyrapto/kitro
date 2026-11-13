@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
-import { DropsAmount } from "@/components/drops-amount";
 import { MonoAddress } from "@/components/mono-address";
 import { StatusBadge } from "@/components/status-badge";
-import { ShieldCheck, Lock, History, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Lock, CheckCircle2 } from "lucide-react";
 
 type MandateData = {
   version: number;
