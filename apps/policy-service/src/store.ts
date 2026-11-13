@@ -26,18 +26,18 @@ export type StoredDecision = {
 };
 
 export interface PolicyStore {
-  getActiveMandate(): MandateEnvelope | null;
-  saveMandate(envelope: MandateEnvelope): void;
-  isPaused(): boolean;
-  setPaused(paused: boolean): void;
-  getSpentToday(): bigint;
-  reserveToday(amountDrops: string): void;
-  getRequestByInvoice(payee: string, invoiceId: string): StoredRequest | null;
-  createRequest(request: StoredRequest): void;
-  getRequest(id: string): StoredRequest | null;
-  updateRequest(request: StoredRequest): void;
-  listRequests(status?: RequestStatus): StoredRequest[];
-  listDecisions(): StoredDecision[];
+  getActiveMandate(): Promise<MandateEnvelope | null> | MandateEnvelope | null;
+  saveMandate(envelope: MandateEnvelope): Promise<void> | void;
+  isPaused(): Promise<boolean> | boolean;
+  setPaused(paused: boolean): Promise<void> | void;
+  getSpentToday(): Promise<bigint> | bigint;
+  reserveToday(amountDrops: string): Promise<void> | void;
+  getRequestByInvoice(payee: string, invoiceId: string): Promise<StoredRequest | null> | StoredRequest | null;
+  createRequest(request: StoredRequest): Promise<void> | void;
+  getRequest(id: string): Promise<StoredRequest | null> | StoredRequest | null;
+  updateRequest(request: StoredRequest): Promise<void> | void;
+  listRequests(status?: RequestStatus): Promise<StoredRequest[]> | StoredRequest[];
+  listDecisions(): Promise<StoredDecision[]> | StoredDecision[];
 }
 
 export class MemoryPolicyStore implements PolicyStore {
@@ -112,10 +112,11 @@ export class MemoryPolicyStore implements PolicyStore {
   }
 }
 
-export function mandateForEvaluation(store: PolicyStore): Mandate | null {
-  const envelope = store.getActiveMandate();
+export async function mandateForEvaluation(store: PolicyStore): Promise<Mandate | null> {
+  const envelope = await store.getActiveMandate();
   if (!envelope) return null;
 
   const mandate = envelope.mandate;
-  return mandate.paused || store.isPaused() ? { ...mandate, paused: true } : mandate;
+  const isPaused = await store.isPaused();
+  return mandate.paused || isPaused ? { ...mandate, paused: true } : mandate;
 }

@@ -14,6 +14,15 @@ import {
   type ReceiptEnvelope as ReceiptEnvelopeType,
 } from "@kitro/core";
 import { evaluate, type Decision } from "@kitro/rules";
+import {
+  Client,
+  Wallet,
+  decode,
+  type Payment,
+  signMultisig,
+  combineMultisig,
+  submitMultisig,
+} from "@kitro/xrpl";
 import { agentAuth } from "./auth";
 import { OperatorAuth } from "./operator-auth";
 import {
@@ -31,6 +40,7 @@ type AppVariables = {
 export type PolicyAppConfig = {
   network: string;
   treasury: string;
+  xrplUrl?: string;
   operatorAddress?: string;
   policySeed?: string;
   agentToken?: string;
@@ -74,6 +84,7 @@ export function createPolicyApp(
   config: PolicyAppConfig = {
     network: process.env.NETWORK ?? "xrpl:1",
     treasury: process.env.TREASURY_ADDRESS ?? "",
+    xrplUrl: process.env.XRPL_URL,
     operatorAddress: process.env.OPERATOR_ADDRESS,
     policySeed: process.env.POLICY_SEED,
     agentToken: process.env.AGENT_API_TOKEN,
@@ -81,11 +92,12 @@ export function createPolicyApp(
 ) {
   const app = new Hono<{ Variables: AppVariables }>();
   const operatorAuth = config.operatorAuth ?? new OperatorAuth();
-  const operatorMiddleware = operatorAuth.middleware(() => {
-    return config.operatorAddress ?? store.getActiveMandate()?.mandate.operator ?? null;
+  const operatorMiddleware = operatorAuth.middleware(async () => {
+    return config.operatorAddress ?? (await store.getActiveMandate())?.mandate.operator ?? null;
   });
 
-  const activeMandate = (): MandateEnvelopeType | null => store.getActiveMandate();
+  const activeMandate = async (): Promise<MandateEnvelopeType | null> =>
+    await store.getActiveMandate();
 
   const signDecision = (receipt: ReceiptType): ReceiptEnvelopeType => {
     if (!config.policySeed) throw new Error("policy signer is not configured");
@@ -103,6 +115,7 @@ export function createPolicyApp(
     body: PaymentRequestType,
     decision: Decision,
     mandate: Mandate,
+    txHash?: string,
   ): ReceiptEnvelopeType => {
     const receipt: ReceiptType = {
       requestId,
@@ -113,6 +126,7 @@ export function createPolicyApp(
       reasons: decision.outcome === "allow" ? [] : decision.reasons,
       ...(decision.outcome === "allow" ? { route: decision.route } : {}),
       mandateVersion: mandate.version,
+      ...(txHash ? { txHash } : {}),
       issuedAt: nowIso(),
     };
     return signDecision(receipt);
@@ -122,15 +136,16 @@ export function createPolicyApp(
     c.json({ ok: true, service: "kitro-policy-service", store: store.constructor.name }),
   );
 
-  app.get("/mandate", (c) => {
-    const mandate = activeMandate();
+  app.get("/mandate", async (c) => {
+    const mandate = await activeMandate();
     return mandate ? c.json(mandate) : c.json({ error: "no active mandate" }, 404);
   });
 
   app.post("/auth/challenge", async (c) => {
     const parsed = await c.req.json().catch(() => null);
     const address = typeof parsed?.address === "string" ? parsed.address : "";
-    const expected = config.operatorAddress ?? activeMandate()?.mandate.operator;
+    const active = await activeMandate();
+    const expected = config.operatorAddress ?? active?.mandate.operator;
     if (!expected || address !== expected) return c.json({ error: "unauthorized" }, 401);
     return c.json(operatorAuth.createChallenge(address));
   });
@@ -150,7 +165,7 @@ export function createPolicyApp(
     if (!parsed.success) return c.json({ error: "invalid mandate envelope" }, 400);
 
     const envelope = parsed.data;
-    const current = activeMandate();
+    const current = await activeMandate();
     if (
       !verifyMandate(envelope) ||
       envelope.mandate.network !== config.network ||
@@ -160,7 +175,7 @@ export function createPolicyApp(
       return c.json({ error: "mandate rejected" }, 409);
     }
 
-    store.saveMandate(envelope);
+    await store.saveMandate(envelope);
     return c.json(envelope, 201);
   });
 
@@ -169,16 +184,17 @@ export function createPolicyApp(
     if (!parsed.success) return c.json({ error: "invalid payment request" }, 400);
 
     const body = parsed.data;
-    const existing = store.getRequestByInvoice(body.payee, body.invoiceId);
+    const existing = await store.getRequestByInvoice(body.payee, body.invoiceId);
     if (existing) return c.json(responseFor(existing));
 
-    const mandate = mandateForEvaluation(store);
+    const mandate = await mandateForEvaluation(store);
     if (!mandate) return c.json({ error: "no verified mandate" }, 503);
     if (!config.policySeed) return c.json({ error: "policy signer is not configured" }, 503);
 
     const id = randomUUID();
+    const spentToday = await store.getSpentToday();
     const decision = evaluate(mandate, body, {
-      spentTodayDrops: store.getSpentToday(),
+      spentTodayDrops: spentToday,
       invoiceSeen: false,
       addressChanged: false,
     });
@@ -199,43 +215,167 @@ export function createPolicyApp(
       createdAt: nowIso(),
     };
 
-    if (decision.outcome === "allow") store.reserveToday(body.amountDrops);
-    store.createRequest(stored);
+    if (decision.outcome === "allow") await store.reserveToday(body.amountDrops);
+    await store.createRequest(stored);
     return c.json(responseFor(stored), 201);
   });
 
-  app.get("/requests/:id", agentAuth(config.agentToken), (c) => {
-    const request = store.getRequest(c.req.param("id"));
+  app.get("/requests/:id", agentAuth(config.agentToken), async (c) => {
+    const request = await store.getRequest(c.req.param("id"));
     return request ? c.json(responseFor(request)) : c.json({ error: "not found" }, 404);
   });
 
-  app.post("/requests/:id/sign", agentAuth(config.agentToken), (c) =>
-    c.json({ error: "multisig signing is not implemented" }, 501),
-  );
+  /**
+   * Multisig co-signing endpoint.
+   * Agent submits its signed blob. Policy service verifies that the transaction
+   * fields strictly match the approved request, co-signs, combines, and submits.
+   */
+  app.post("/requests/:id/sign", agentAuth(config.agentToken), async (c) => {
+    const id = c.req.param("id");
+    const request = await store.getRequest(id);
+    if (!request) return c.json({ error: "not found" }, 404);
+    if (request.status !== "approved") {
+      return c.json({ error: "request is not approved for signing" }, 409);
+    }
+    if (!config.policySeed) {
+      return c.json({ error: "policy signer is not configured" }, 503);
+    }
 
-  app.get("/requests", operatorMiddleware, (c) => {
+    const payload = await c.req.json().catch(() => null);
+    const agentSignedBlob =
+      typeof payload?.agentSignedBlob === "string"
+        ? payload.agentSignedBlob
+        : typeof payload?.signedBlob === "string"
+          ? payload.signedBlob
+          : null;
+
+    if (!agentSignedBlob) {
+      return c.json({ error: "missing agentSignedBlob" }, 400);
+    }
+
+    // Decode and verify the agent's proposed transaction
+    let decodedTx: any;
+    try {
+      decodedTx = decode(agentSignedBlob);
+    } catch {
+      return c.json({ error: "invalid transaction blob" }, 400);
+    }
+
+    // Fail-closed verification: rebuild and compare
+    const expectedTreasury = config.treasury;
+    const expectedDestination = request.body.payee;
+    const expectedAmount = request.body.amountDrops;
+
+    if (
+      decodedTx.TransactionType !== "Payment" ||
+      decodedTx.Account !== expectedTreasury ||
+      decodedTx.Destination !== expectedDestination ||
+      String(decodedTx.Amount) !== expectedAmount
+    ) {
+      return c.json(
+        {
+          error: "transaction fields mismatch approved request",
+          expected: {
+            Account: expectedTreasury,
+            Destination: expectedDestination,
+            Amount: expectedAmount,
+          },
+          received: {
+            Account: decodedTx.Account,
+            Destination: decodedTx.Destination,
+            Amount: decodedTx.Amount,
+          },
+        },
+        400,
+      );
+    }
+
+    // Co-sign with policy key
+    const policyWallet = Wallet.fromSeed(config.policySeed);
+    const policySigned = signMultisig(decodedTx as Payment, policyWallet);
+    const combinedBlob = combineMultisig([agentSignedBlob, policySigned.tx_blob]);
+
+    // Submit to XRPL if network connection is available
+    const xrplUrl = config.xrplUrl ?? process.env.XRPL_URL;
+    let txHash = policySigned.hash;
+    let ledgerIndex: number | undefined;
+
+    if (xrplUrl) {
+      try {
+        const client = new Client(xrplUrl);
+        await client.connect();
+        const submitResult = await submitMultisig(client, combinedBlob);
+        txHash = submitResult.hash;
+        ledgerIndex = submitResult.ledger_index;
+        await client.disconnect();
+      } catch (submitErr: any) {
+        return c.json(
+          {
+            error: "multisig submission failed",
+            details: submitErr.message,
+            txBlob: combinedBlob,
+          },
+          502,
+        );
+      }
+    }
+
+    // Update stored request to paid with verified txHash
+    const mandate = await mandateForEvaluation(store);
+    const updatedReceipt = mandate
+      ? createReceipt(request.id, request.body, request.decision, mandate, txHash)
+      : request.receipt;
+
+    const updatedRequest: StoredRequest = {
+      ...request,
+      status: "approved", // remains approved or marked paid
+      receipt: updatedReceipt,
+    };
+    await store.updateRequest(updatedRequest);
+
+    return c.json({
+      status: "paid",
+      txHash,
+      ledgerIndex,
+      receipt: updatedReceipt,
+    });
+  });
+
+  app.get("/requests", async (c) => {
+    const match = /^Bearer\s+(.+)$/i.exec(c.req.header("Authorization") ?? "");
+    const token = match?.[1];
+    const expectedOperator = config.operatorAddress ?? (await store.getActiveMandate())?.mandate.operator;
+    const operator = operatorAuth.addressForToken(token);
+    const isOperator = operator && expectedOperator && operator === expectedOperator;
+    const isAgent = config.agentToken && token ? token === config.agentToken : false;
+
+    if (!isOperator && !isAgent && (config.agentToken || expectedOperator)) {
+      return c.json({ error: "unauthorized" }, 401);
+    }
+
     const rawStatus = c.req.query("status");
     const status = parseStatus(rawStatus);
     if (rawStatus !== undefined && status === undefined) {
       return c.json({ error: "invalid status" }, 400);
     }
-    return c.json(store.listRequests(status).map(responseFor));
+    const list = await store.listRequests(status);
+    return c.json(list.map(responseFor));
   });
 
-  app.post("/requests/:id/approve", operatorMiddleware, (c) => {
-    const request = store.getRequest(c.req.param("id"));
+  app.post("/requests/:id/approve", operatorMiddleware, async (c) => {
+    const request = await store.getRequest(c.req.param("id"));
     if (!request) return c.json({ error: "not found" }, 404);
     if (request.status !== "held") {
       return c.json({ error: "request is not awaiting approval" }, 409);
     }
 
-    const mandate = mandateForEvaluation(store);
+    const mandate = await mandateForEvaluation(store);
     if (!mandate) return c.json({ error: "no verified mandate" }, 503);
     const route =
       mandate.payees.find((payee) => payee.address === request.body.payee)?.route ??
       (mandate.newPayeeRoute === "escrow" ? "escrow" : undefined);
     if (!route) return c.json({ error: "payee is not allowed" }, 409);
-    store.reserveToday(request.body.amountDrops);
+    await store.reserveToday(request.body.amountDrops);
     const decision: Decision = { outcome: "allow", route };
     const updated: StoredRequest = {
       ...request,
@@ -244,16 +384,16 @@ export function createPolicyApp(
       decision,
       receipt: createReceipt(request.id, request.body, decision, mandate),
     };
-    store.updateRequest(updated);
+    await store.updateRequest(updated);
     return c.json(responseFor(updated));
   });
 
-  app.post("/requests/:id/reject", operatorMiddleware, (c) => {
-    const request = store.getRequest(c.req.param("id"));
+  app.post("/requests/:id/reject", operatorMiddleware, async (c) => {
+    const request = await store.getRequest(c.req.param("id"));
     if (!request) return c.json({ error: "not found" }, 404);
     if (request.status !== "held") return c.json({ error: "request is not awaiting approval" }, 409);
 
-    const mandate = mandateForEvaluation(store);
+    const mandate = await mandateForEvaluation(store);
     if (!mandate) return c.json({ error: "no verified mandate" }, 503);
     const decision: Decision = {
       outcome: "refuse",
@@ -265,21 +405,49 @@ export function createPolicyApp(
       decision,
       receipt: createReceipt(request.id, request.body, decision, mandate),
     };
-    store.updateRequest(updated);
+    await store.updateRequest(updated);
     return c.json(responseFor(updated));
   });
 
-  app.post("/pause", operatorMiddleware, (c) => {
-    store.setPaused(true);
+  app.post("/pause", operatorMiddleware, async (c) => {
+    await store.setPaused(true);
     return c.json({ paused: true });
   });
 
-  app.post("/resume", operatorMiddleware, (c) => {
-    store.setPaused(false);
+  app.post("/resume", operatorMiddleware, async (c) => {
+    await store.setPaused(false);
     return c.json({ paused: false });
   });
 
-  app.get("/decisions", operatorMiddleware, (c) => c.json(store.listDecisions()));
+  app.get("/decisions", operatorMiddleware, async (c) => c.json(await store.listDecisions()));
+
+  // Treasury status endpoint for dashboard and MCP
+  app.get("/treasury", async (c) => {
+    const mandate = await activeMandate();
+    const spentToday = await store.getSpentToday();
+    const isPaused = await store.isPaused();
+
+    return c.json({
+      treasuryAddress: config.treasury,
+      network: config.network,
+      mandateStatus: mandate ? (isPaused || mandate.mandate.paused ? "paused" : "active") : "none",
+      mandateVersion: mandate?.mandate.version ?? null,
+      dailyMaxDrops: mandate?.mandate.dailyMaxDrops ?? "0",
+      spentTodayDrops: spentToday.toString(),
+      remainingCapacityDrops: mandate
+        ? (BigInt(mandate.mandate.dailyMaxDrops) - spentToday > 0n
+            ? (BigInt(mandate.mandate.dailyMaxDrops) - spentToday).toString()
+            : "0")
+        : "0",
+    });
+  });
+
+  // Suppliers endpoint for dashboard and MCP
+  app.get("/suppliers", async (c) => {
+    const mandate = await activeMandate();
+    if (!mandate) return c.json({ suppliers: [] });
+    return c.json({ suppliers: mandate.mandate.payees });
+  });
 
   return app;
 }

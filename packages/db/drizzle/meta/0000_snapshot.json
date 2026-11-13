@@ -1,0 +1,639 @@
+{
+  "id": "25b6823c-063b-481f-8c90-cf03751c807e",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.approvals": {
+      "name": "approvals",
+      "schema": "",
+      "columns": {
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approvals_request_id_requests_id_fk": {
+          "name": "approvals_request_id_requests_id_fk",
+          "tableFrom": "approvals",
+          "tableTo": "requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.channels": {
+      "name": "channels",
+      "schema": "",
+      "columns": {
+        "channel_id": {
+          "name": "channel_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "payee": {
+          "name": "payee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_drops": {
+          "name": "amount_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "claimed_total_drops": {
+          "name": "claimed_total_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "settle_delay": {
+          "name": "settle_delay",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.claims": {
+      "name": "claims",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cumulative_drops": {
+          "name": "cumulative_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "claims_channel_idx": {
+          "name": "claims_channel_idx",
+          "columns": [
+            {
+              "expression": "channel_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "claims_channel_id_channels_channel_id_fk": {
+          "name": "claims_channel_id_channels_channel_id_fk",
+          "tableFrom": "claims",
+          "tableTo": "channels",
+          "columnsFrom": [
+            "channel_id"
+          ],
+          "columnsTo": [
+            "channel_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "claims_request_id_requests_id_fk": {
+          "name": "claims_request_id_requests_id_fk",
+          "tableFrom": "claims",
+          "tableTo": "requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.decisions": {
+      "name": "decisions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reasons": {
+          "name": "reasons",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mandate_version": {
+          "name": "mandate_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receipt": {
+          "name": "receipt",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receipt_hash": {
+          "name": "receipt_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "decisions_request_idx": {
+          "name": "decisions_request_idx",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "decisions_request_id_requests_id_fk": {
+          "name": "decisions_request_id_requests_id_fk",
+          "tableFrom": "decisions",
+          "tableTo": "requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "decisions_mandate_version_mandates_version_fk": {
+          "name": "decisions_mandate_version_mandates_version_fk",
+          "tableFrom": "decisions",
+          "tableTo": "mandates",
+          "columnsFrom": [
+            "mandate_version"
+          ],
+          "columnsTo": [
+            "version"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.escrows": {
+      "name": "escrows",
+      "schema": "",
+      "columns": {
+        "owner_sequence": {
+          "name": "owner_sequence",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "payee": {
+          "name": "payee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_drops": {
+          "name": "amount_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "condition": {
+          "name": "condition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fulfillment_enc": {
+          "name": "fulfillment_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancel_after": {
+          "name": "cancel_after",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.mandates": {
+      "name": "mandates",
+      "schema": "",
+      "columns": {
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signature": {
+          "name": "signature",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_key": {
+          "name": "public_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.requests": {
+      "name": "requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "invoice_id": {
+          "name": "invoice_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payee": {
+          "name": "payee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_drops": {
+          "name": "amount_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "requests_payee_invoice_idx": {
+          "name": "requests_payee_invoice_idx",
+          "columns": [
+            {
+              "expression": "payee",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "invoice_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.spend": {
+      "name": "spend",
+      "schema": "",
+      "columns": {
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reserved_drops": {
+          "name": "reserved_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "confirmed_drops": {
+          "name": "confirmed_drops",
+          "type": "numeric(20, 0)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.txs": {
+      "name": "txs",
+      "schema": "",
+      "columns": {
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result": {
+          "name": "result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "validated": {
+          "name": "validated",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ledger_index": {
+          "name": "ledger_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "txs_request_idx": {
+          "name": "txs_request_idx",
+          "columns": [
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "txs_request_id_requests_id_fk": {
+          "name": "txs_request_id_requests_id_fk",
+          "tableFrom": "txs",
+          "tableTo": "requests",
+          "columnsFrom": [
+            "request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -11,6 +11,8 @@
     "dev:dashboard": "pnpm --filter @kitro/dashboard dev",
     "dev:service": "pnpm --filter @kitro/policy-service dev",
     "dev:agent": "pnpm --filter @kitro/agent dev",
+    "dev:mcp": "pnpm --filter @kitro/mcp start",
+    "dev:mcp:http": "pnpm --filter @kitro/mcp start:http",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

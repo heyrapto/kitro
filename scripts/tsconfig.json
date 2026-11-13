@@ -1,7 +1,12 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@kitro/core": ["../packages/core/src/index.ts"],
+      "@kitro/rules": ["../packages/rules/src/index.ts"],
+      "@kitro/xrpl": ["../packages/xrpl/src/index.ts"]
+    }
   },
   "include": ["*.ts"]
 }

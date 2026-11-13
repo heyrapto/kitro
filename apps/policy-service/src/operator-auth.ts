@@ -58,11 +58,11 @@ export class OperatorAuth {
     return session.address;
   }
 
-  middleware(expectedAddress: () => string | null): MiddlewareHandler {
+  middleware(expectedAddress: () => string | null | Promise<string | null>): MiddlewareHandler {
     return async (c, next) => {
       const match = /^Bearer\s+(.+)$/i.exec(c.req.header("Authorization") ?? "");
       const address = this.addressForToken(match?.[1]);
-      const expected = expectedAddress();
+      const expected = await expectedAddress();
       if (!address || !expected || address !== expected) {
         return c.json({ error: "unauthorized" }, 401);
       }

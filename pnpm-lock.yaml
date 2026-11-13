@@ -212,6 +212,9 @@ importers:
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@24.19.2)(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   apps/dashboard:
     dependencies:
@@ -267,6 +270,40 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  apps/mcp:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^2.1.6
+        version: 2.1.6(hono@4.13.17)
+      '@kitro/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@kitro/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@kitro/rules':
+        specifier: workspace:*
+        version: link:../../packages/rules
+      hono:
+        specifier: ^4.13.17
+        version: 4.13.17
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^24.19.2
+        version: 24.19.2
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@24.19.2)(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   apps/policy-service:
     dependencies:
@@ -380,6 +417,9 @@ importers:
       '@kitro/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@kitro/rules':
+        specifier: workspace:*
+        version: link:../packages/rules
       '@kitro/xrpl':
         specifier: workspace:*
         version: link:../packages/xrpl

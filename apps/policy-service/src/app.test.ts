@@ -1,6 +1,7 @@
 import { deriveAddress, deriveKeypair, generateSeed, sign } from "ripple-keypairs";
 import { describe, expect, it } from "vitest";
 import { verifyReceipt, signMandate, type Mandate } from "@kitro/core";
+import { Wallet } from "@kitro/xrpl";
 import { createPolicyApp } from "./app";
 import { OperatorAuth } from "./operator-auth";
 import { MemoryPolicyStore } from "./store";
@@ -11,16 +12,16 @@ function makeWallet() {
   return { seed, ...keypair, address: deriveAddress(keypair.publicKey) };
 }
 
-function makeMandate(operator: string): Mandate {
+function makeMandate(operator: string, treasury: string, supplier: string): Mandate {
   return {
     version: 1,
     operator,
     network: "xrpl:1",
-    treasury: "rTreasury",
+    treasury,
     perPaymentMaxDrops: "5000000",
     dailyMaxDrops: "7000000",
     requireApprovalAboveDrops: "5000000",
-    payees: [{ address: "rSupplier", name: "Supplier", route: "payment" }],
+    payees: [{ address: supplier, name: "Supplier", route: "payment" }],
     newPayeeRoute: "refuse",
     escrowMaxLockSeconds: 86400,
     paused: false,
@@ -30,12 +31,14 @@ function makeMandate(operator: string): Mandate {
 
 async function authenticatedApp() {
   const operator = makeWallet();
+  const treasury = makeWallet();
+  const supplier = makeWallet();
   const policy = makeWallet();
   const auth = new OperatorAuth();
   const store = new MemoryPolicyStore();
   const app = createPolicyApp(store, {
     network: "xrpl:1",
-    treasury: "rTreasury",
+    treasury: treasury.address,
     operatorAddress: operator.address,
     policySeed: policy.seed,
     agentToken: "agent-token",
@@ -59,7 +62,7 @@ async function authenticatedApp() {
     }),
   });
   const session = (await verifyResponse.json()) as { token: string };
-  const mandate = makeMandate(operator.address);
+  const mandate = makeMandate(operator.address, treasury.address, supplier.address);
   const mandateResponse = await app.request("/mandate", {
     method: "POST",
     headers: {
@@ -74,7 +77,7 @@ async function authenticatedApp() {
   });
 
   expect(mandateResponse.status).toBe(201);
-  return { app, sessionToken: session.token };
+  return { app, sessionToken: session.token, operator, treasury, supplier, policy };
 }
 
 function agentHeaders() {
@@ -103,8 +106,8 @@ describe("policy routes", () => {
   });
 
   it("evaluates, signs, and idempotently returns a payment decision", async () => {
-    const { app } = await authenticatedApp();
-    const body = { invoiceId: "INV-1", payee: "rSupplier", amountDrops: "2500000" };
+    const { app, supplier } = await authenticatedApp();
+    const body = { invoiceId: "INV-1", payee: supplier.address, amountDrops: "2500000" };
 
     const first = await app.request("/requests", {
       method: "POST",
@@ -131,11 +134,11 @@ describe("policy routes", () => {
   });
 
   it("refuses a request that exceeds the per-payment cap", async () => {
-    const { app } = await authenticatedApp();
+    const { app, supplier } = await authenticatedApp();
     const response = await app.request("/requests", {
       method: "POST",
       headers: agentHeaders(),
-      body: JSON.stringify({ invoiceId: "INV-2", payee: "rSupplier", amountDrops: "5000001" }),
+      body: JSON.stringify({ invoiceId: "INV-2", payee: supplier.address, amountDrops: "5000001" }),
     });
     const json = (await response.json()) as { status: string; decision: { reasons: string[] } };
 
@@ -145,7 +148,7 @@ describe("policy routes", () => {
   });
 
   it("lets the operator pause and resume policy decisions", async () => {
-    const { app, sessionToken } = await authenticatedApp();
+    const { app, sessionToken, supplier } = await authenticatedApp();
     const operatorHeaders = {
       authorization: `Bearer ${sessionToken}`,
       "content-type": "application/json",
@@ -157,7 +160,7 @@ describe("policy routes", () => {
     const paused = await app.request("/requests", {
       method: "POST",
       headers: agentHeaders(),
-      body: JSON.stringify({ invoiceId: "INV-3", payee: "rSupplier", amountDrops: "1" }),
+      body: JSON.stringify({ invoiceId: "INV-3", payee: supplier.address, amountDrops: "1" }),
     });
     const pausedJson = (await paused.json()) as { decision: { reasons: string[] } };
     expect(pausedJson.decision.reasons).toContain("PAUSED");
@@ -165,5 +168,86 @@ describe("policy routes", () => {
     expect((await app.request("/resume", { method: "POST", headers: operatorHeaders })).status).toBe(
       200,
     );
+  });
+
+  it("returns treasury status and remaining capacity", async () => {
+    const { app, treasury } = await authenticatedApp();
+    const res = await app.request("/treasury");
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as any;
+    expect(json.treasuryAddress).toBe(treasury.address);
+    expect(json.mandateStatus).toBe("active");
+    expect(json.dailyMaxDrops).toBe("7000000");
+  });
+
+  it("returns suppliers list from active mandate", async () => {
+    const { app, supplier } = await authenticatedApp();
+    const res = await app.request("/suppliers");
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as any;
+    expect(json.suppliers).toHaveLength(1);
+    expect(json.suppliers[0].address).toBe(supplier.address);
+  });
+
+  it("handles multisig co-signing endpoint", async () => {
+    const { app, treasury, supplier } = await authenticatedApp();
+    const agent = makeWallet();
+
+    // 1. Submit valid request
+    const createRes = await app.request("/requests", {
+      method: "POST",
+      headers: agentHeaders(),
+      body: JSON.stringify({
+        invoiceId: "INV-SIGN",
+        payee: supplier.address,
+        amountDrops: "1000000",
+      }),
+    });
+    expect(createRes.status).toBe(201);
+    const reqJson = (await createRes.json()) as any;
+    expect(reqJson.status).toBe("approved");
+
+    // 2. Reject if agent submits mismatched transaction
+    const attacker = makeWallet();
+    const agentWallet = Wallet.fromSeed(agent.seed);
+    const wrongTx = {
+      TransactionType: "Payment",
+      Account: treasury.address,
+      Destination: attacker.address, // wrong destination!
+      Amount: "1000000",
+      Fee: "30",
+      Sequence: 1,
+      SigningPubKey: "",
+    };
+    const signedWrongBlob = agentWallet.sign(wrongTx as any, true).tx_blob;
+
+    const badSignRes = await app.request(`/requests/${reqJson.id}/sign`, {
+      method: "POST",
+      headers: agentHeaders(),
+      body: JSON.stringify({ agentSignedBlob: signedWrongBlob }),
+    });
+    expect(badSignRes.status).toBe(400);
+
+    // 3. Accept and co-sign matching transaction
+    const correctTx = {
+      TransactionType: "Payment",
+      Account: treasury.address,
+      Destination: supplier.address,
+      Amount: "1000000",
+      Fee: "30",
+      Sequence: 1,
+      SigningPubKey: "",
+    };
+    const correctSignedBlob = agentWallet.sign(correctTx as any, true).tx_blob;
+
+    const signRes = await app.request(`/requests/${reqJson.id}/sign`, {
+      method: "POST",
+      headers: agentHeaders(),
+      body: JSON.stringify({ agentSignedBlob: correctSignedBlob }),
+    });
+    expect(signRes.status).toBe(200);
+    const signJson = (await signRes.json()) as any;
+    expect(signJson.status).toBe("paid");
+    expect(signJson.txHash).toBeTypeOf("string");
   });
 });

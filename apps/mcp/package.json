@@ -1,0 +1,29 @@
+{
+  "name": "@kitro/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "kitro-mcp": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "start:http": "tsx src/http.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.6",
+    "@kitro/client": "workspace:*",
+    "@kitro/core": "workspace:*",
+    "@kitro/rules": "workspace:*",
+    "hono": "^4.13.17",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}
