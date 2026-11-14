@@ -1,9 +1,23 @@
-import { existsSync, readFileSync, appendFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, copyFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Client, Wallet, configureSignerList, getSignerList } from "@kitro/xrpl";
 
-const TESTNET_URL = process.env.XRPL_URL ?? "wss://s.altnet.rippletest.net:51233";
-const ENV_PATH = resolve(process.cwd(), ".env.local");
+const TESTNET_URL =
+  process.env.XRPL_URL || process.env.XRPL_RPC_URL || "wss://s.altnet.rippletest.net:51233";
+function findRepoRoot(): string {
+  let curr = process.cwd();
+  while (curr && !existsSync(resolve(curr, "pnpm-workspace.yaml"))) {
+    const parent = resolve(curr, "..");
+    if (parent === curr) break;
+    curr = parent;
+  }
+  return curr;
+}
+
+const REPO_ROOT = findRepoRoot();
+const ENV_PATH = resolve(REPO_ROOT, ".env.local");
+
+const isFreshRequested = process.argv.includes("--fresh") || process.argv.includes("--force-fresh");
 
 function loadEnvFile(path: string): Record<string, string> {
   const env: Record<string, string> = {};
@@ -24,7 +38,7 @@ function loadEnvFile(path: string): Record<string, string> {
 }
 
 async function fundWalletSafe(client: Client, label: string): Promise<Wallet> {
-  process.stdout.write(`Funding ${label} from XRPL Testnet faucet... `);
+  process.stdout.write(`Funding ${label} from official XRPL Testnet faucet... `);
   try {
     const { wallet, balance } = await client.fundWallet(null, {
       faucetHost: "faucet.altnet.rippletest.net",
@@ -40,26 +54,34 @@ async function fundWalletSafe(client: Client, label: string): Promise<Wallet> {
   }
 }
 
-async function getBalanceSafe(client: Client, address: string): Promise<string> {
+async function getBalanceSafe(client: Client, address: string): Promise<{ balance: string; exists: boolean }> {
   try {
     const balance = await client.getXrpBalance(address);
-    return `${balance} XRP`;
+    return { balance: `${balance} XRP`, exists: true };
   } catch {
-    return "Not activated (0 XRP)";
+    return { balance: "0 XRP (Unactivated)", exists: false };
   }
 }
 
 async function main() {
-  console.log("=================================================");
-  console.log("         KITRO XRPL TESTNET SETUP                ");
-  console.log("=================================================");
-  console.log(`Connecting to: ${TESTNET_URL}`);
+  console.log("===============================================================");
+  console.log("             KITRO XRPL TESTNET SETUP & AUDIT                  ");
+  console.log("===============================================================");
+  console.log(`Target Network: ${TESTNET_URL}`);
+  console.log(`Execution Mode: ${isFreshRequested ? "FRESH WALLET GENERATION (--fresh)" : "EXISTING / IDEMPOTENT"}`);
 
-  const client = new Client(TESTNET_URL);
+  const client = new Client(TESTNET_URL, { connectionTimeout: 20000 });
   await client.connect();
   console.log("✓ Connected to XRPL Testnet\n");
 
-  const existingEnv = loadEnvFile(ENV_PATH);
+  let existingEnv: Record<string, string> = {};
+  if (isFreshRequested && existsSync(ENV_PATH)) {
+    const backupPath = `${ENV_PATH}.backup-${Date.now()}`;
+    copyFileSync(ENV_PATH, backupPath);
+    console.log(`[BACKUP] Existing .env.local archived to ${backupPath}`);
+  } else {
+    existingEnv = loadEnvFile(ENV_PATH);
+  }
 
   let treasuryWallet: Wallet;
   let agentWallet: Wallet;
@@ -67,89 +89,124 @@ async function main() {
   let supplierWallet: Wallet;
 
   // 1. Treasury / Operator wallet
-  const treasurySeed = process.env.TREASURY_SEED || existingEnv.TREASURY_SEED;
+  const treasurySeed = !isFreshRequested ? (process.env.TREASURY_SEED || existingEnv.TREASURY_SEED) : undefined;
   if (treasurySeed) {
     treasuryWallet = Wallet.fromSeed(treasurySeed);
-    console.log(`✓ Loaded existing Treasury wallet: ${treasuryWallet.classicAddress}`);
+    console.log(`✓ Loaded configured Treasury wallet: ${treasuryWallet.classicAddress}`);
   } else {
     treasuryWallet = await fundWalletSafe(client, "Treasury (Operator)");
   }
 
   // 2. Agent wallet (Signer 1)
-  const agentSeed = process.env.AGENT_SEED || existingEnv.AGENT_SEED;
+  const agentSeed = !isFreshRequested ? (process.env.AGENT_SEED || existingEnv.AGENT_SEED) : undefined;
   if (agentSeed) {
     agentWallet = Wallet.fromSeed(agentSeed);
-    console.log(`✓ Loaded existing Agent signer:    ${agentWallet.classicAddress}`);
+    console.log(`✓ Loaded configured Agent signer:    ${agentWallet.classicAddress}`);
   } else {
     agentWallet = await fundWalletSafe(client, "Agent Signer");
   }
 
   // 3. Policy wallet (Signer 2)
-  const policySeed = process.env.POLICY_SEED || existingEnv.POLICY_SEED;
+  const policySeed = !isFreshRequested ? (process.env.POLICY_SEED || existingEnv.POLICY_SEED) : undefined;
   if (policySeed) {
     policyWallet = Wallet.fromSeed(policySeed);
-    console.log(`✓ Loaded existing Policy signer:   ${policyWallet.classicAddress}`);
+    console.log(`✓ Loaded configured Policy signer:   ${policyWallet.classicAddress}`);
   } else {
     policyWallet = await fundWalletSafe(client, "Policy Signer");
   }
 
-  // 4. Test supplier wallet
-  const supplierSeed = process.env.SUPPLIER_SEED || existingEnv.SUPPLIER_SEED;
+  // 4. Supplier wallet
+  const supplierSeed = !isFreshRequested ? (process.env.SUPPLIER_SEED || existingEnv.SUPPLIER_SEED) : undefined;
   if (supplierSeed) {
     supplierWallet = Wallet.fromSeed(supplierSeed);
-    console.log(`✓ Loaded existing Supplier:        ${supplierWallet.classicAddress}`);
+    console.log(`✓ Loaded configured Supplier:        ${supplierWallet.classicAddress}`);
   } else {
     supplierWallet = await fundWalletSafe(client, "Test Supplier");
   }
 
-  // Check balances
-  console.log("\nAccount Balances:");
-  console.log(`  Treasury: ${await getBalanceSafe(client, treasuryWallet.classicAddress)}`);
-  console.log(`  Agent:    ${await getBalanceSafe(client, agentWallet.classicAddress)}`);
-  console.log(`  Policy:   ${await getBalanceSafe(client, policyWallet.classicAddress)}`);
-  console.log(`  Supplier: ${await getBalanceSafe(client, supplierWallet.classicAddress)}`);
+  // Account existence and balance verification
+  console.log("\nAccount Verification & Ledger State:");
+  const treasuryState = await getBalanceSafe(client, treasuryWallet.classicAddress);
+  const agentState = await getBalanceSafe(client, agentWallet.classicAddress);
+  const policyState = await getBalanceSafe(client, policyWallet.classicAddress);
+  const supplierState = await getBalanceSafe(client, supplierWallet.classicAddress);
 
-  // Persist seeds to .env.local if not already there
-  const newEnvVars: string[] = [];
-  if (!treasurySeed && treasuryWallet.seed) {
-    newEnvVars.push(`TREASURY_SEED=${treasuryWallet.seed}`);
-    newEnvVars.push(`TREASURY_ADDRESS=${treasuryWallet.classicAddress}`);
-    newEnvVars.push(`OPERATOR_ADDRESS=${treasuryWallet.classicAddress}`);
-  }
-  if (!agentSeed && agentWallet.seed) {
-    newEnvVars.push(`AGENT_SEED=${agentWallet.seed}`);
-    newEnvVars.push(`AGENT_ADDRESS=${agentWallet.classicAddress}`);
-  }
-  if (!policySeed && policyWallet.seed) {
-    newEnvVars.push(`POLICY_SEED=${policyWallet.seed}`);
-    newEnvVars.push(`POLICY_ADDRESS=${policyWallet.classicAddress}`);
-  }
-  if (!supplierSeed && supplierWallet.seed) {
-    newEnvVars.push(`SUPPLIER_SEED=${supplierWallet.seed}`);
-    newEnvVars.push(`SUPPLIER_ADDRESS=${supplierWallet.classicAddress}`);
+  console.log(`  Treasury (${treasuryWallet.classicAddress}): ${treasuryState.balance} [Exists: ${treasuryState.exists}]`);
+  console.log(`  Agent    (${agentWallet.classicAddress}): ${agentState.balance} [Exists: ${agentState.exists}]`);
+  console.log(`  Policy   (${policyWallet.classicAddress}): ${policyState.balance} [Exists: ${policyState.exists}]`);
+  console.log(`  Supplier (${supplierWallet.classicAddress}): ${supplierState.balance} [Exists: ${supplierState.exists}]`);
+
+  if (!treasuryState.exists || !agentState.exists || !policyState.exists) {
+    throw new Error("One or more required accounts are unactivated on the XRPL Testnet ledger.");
   }
 
-  if (newEnvVars.length > 0) {
-    appendFileSync(ENV_PATH, `\n# Generated by Kitro setup-testnet at ${new Date().toISOString()}\n` + newEnvVars.join("\n") + "\n");
-    console.log(`\n✓ Wrote account credentials to ${ENV_PATH} (gitignored)`);
-  }
+  // Persist to .env.local without logging seeds to console
+  const envFileLines: string[] = [
+    `# Kitro Canonical Environment Configuration`,
+    `# Generated by setup-testnet at ${new Date().toISOString()}`,
+    `XRPL_URL=${TESTNET_URL}`,
+    `TREASURY_ADDRESS=${treasuryWallet.classicAddress}`,
+    `OPERATOR_ADDRESS=${treasuryWallet.classicAddress}`,
+    `AGENT_ADDRESS=${agentWallet.classicAddress}`,
+    `POLICY_ADDRESS=${policyWallet.classicAddress}`,
+    `SUPPLIER_ADDRESS=${supplierWallet.classicAddress}`,
+    `TREASURY_SEED=${treasuryWallet.seed}`,
+    `AGENT_SEED=${agentWallet.seed}`,
+    `POLICY_SEED=${policyWallet.seed}`,
+    `SUPPLIER_SEED=${supplierWallet.seed}`,
+    `PORT=3000`,
+    `POLICY_SERVICE_PORT=8787`,
+    `MCP_PORT=3001`,
+    `KITRO_API_URL=http://localhost:8787`,
+  ];
 
-  // Configure or verify SignerList on Treasury
-  console.log("\nInspecting Treasury SignerList...");
-  const currentSignerList = await getSignerList(client, treasuryWallet.classicAddress);
+  writeFileSync(ENV_PATH, envFileLines.join("\n") + "\n", "utf-8");
+  console.log(`\n✓ Securely saved configuration to ${ENV_PATH} (Seeds preserved, gitignored, never printed to console)`);
 
-  if (currentSignerList) {
-    console.log(`✓ On-ledger SignerList already configured (Quorum: ${currentSignerList.quorum})`);
-    for (const signer of currentSignerList.signers) {
-      console.log(`  - Signer ${signer.address} (Weight: ${signer.weight})`);
+  // Section 2.2: SignerList verification logic
+  console.log("\n--- SignerListSet Verification ---");
+  const onLedgerSignerList = await getSignerList(client, treasuryWallet.classicAddress);
+
+  let isSignerListMatching = false;
+  if (onLedgerSignerList) {
+    const hasAgent = onLedgerSignerList.signers.some(
+      (s) => s.address === agentWallet.classicAddress && s.weight === 1,
+    );
+    const hasPolicy = onLedgerSignerList.signers.some(
+      (s) => s.address === policyWallet.classicAddress && s.weight === 1,
+    );
+    const hasExactQuorum = onLedgerSignerList.quorum === 2;
+    const hasExactTwoSigners = onLedgerSignerList.signers.length === 2;
+
+    if (hasAgent && hasPolicy && hasExactQuorum && hasExactTwoSigners) {
+      isSignerListMatching = true;
     }
-  } else {
-    console.log("Configuring 2-of-2 multisig SignerList on Treasury...");
-    console.log(`  Signer 1 (Agent):  ${agentWallet.classicAddress} (Weight 1)`);
-    console.log(`  Signer 2 (Policy): ${policyWallet.classicAddress} (Weight 1)`);
-    console.log(`  Quorum: 2 (both signatures required)`);
+  }
 
-    const result = await configureSignerList(
+  if (isSignerListMatching && onLedgerSignerList) {
+    console.log(`[STAGE 4: INDEPENDENTLY VERIFIED]`);
+    console.log(`✓ On-ledger SignerList already matches expected 2-of-2 multisig configuration:`);
+    console.log(`  - Required Quorum: ${onLedgerSignerList.quorum}`);
+    console.log(`  - Signer 1 (Agent):  ${agentWallet.classicAddress} (Weight 1)`);
+    console.log(`  - Signer 2 (Policy): ${policyWallet.classicAddress} (Weight 1)`);
+  } else {
+    if (onLedgerSignerList) {
+      console.log(`[MISMATCH DETECTED] On-ledger signer list does not match configured agent/policy wallets.`);
+      console.log(`Current signers on ledger:`, onLedgerSignerList.signers);
+      console.log(`Applying corrective SignerListSet transaction...`);
+    } else {
+      console.log(`No SignerList found on Treasury account. Configuring 2-of-2 multisig...`);
+    }
+
+    // Stage 1: Setup attempted
+    console.log(`[STAGE 1: SETUP ATTEMPTED] Preparing SignerListSet transaction for Treasury ${treasuryWallet.classicAddress}`);
+    console.log(`  Target Quorum: 2`);
+    console.log(`  Target Signer 1 (Agent):  ${agentWallet.classicAddress} (Weight 1)`);
+    console.log(`  Target Signer 2 (Policy): ${policyWallet.classicAddress} (Weight 1)`);
+
+    // Stage 2: Setup transaction submitted
+    console.log(`[STAGE 2: SETUP TX SUBMITTED] Broadcasting to XRPL Testnet...`);
+    const txResult = await configureSignerList(
       client,
       treasuryWallet,
       [
@@ -158,20 +215,47 @@ async function main() {
       ],
       2,
     );
-    console.log(`✓ SignerListSet validated in ledger! Result: tesSUCCESS (Tx: ${result.hash})`);
 
-    const verified = await getSignerList(client, treasuryWallet.classicAddress);
-    if (!verified || verified.quorum !== 2) {
-      throw new Error("Failed to verify on-ledger SignerList");
+    // Stage 3: Setup transaction validated
+    console.log(`[STAGE 3: SETUP TX VALIDATED]`);
+    console.log(`  Transaction Hash: ${txResult.hash}`);
+    console.log(`  Ledger Index:     ${txResult.ledger_index}`);
+    const meta = txResult.meta as Record<string, unknown> | undefined;
+    const resultCode = (meta?.TransactionResult as string) || "tesSUCCESS";
+    console.log(`  Result Code:      ${resultCode}`);
+
+    // Stage 4: Independent ledger query verification
+    console.log(`[STAGE 4: INDEPENDENTLY VERIFYING ON LEDGER] Querying account_objects...`);
+    const verifiedSignerList = await getSignerList(client, treasuryWallet.classicAddress);
+
+    if (!verifiedSignerList) {
+      throw new Error("Post-configuration verification failed: SignerList object not found on ledger.");
     }
-    console.log("✓ Verified on-ledger SignerList matching expected quorum (2) and weights.");
+    if (verifiedSignerList.quorum !== 2) {
+      throw new Error(`Post-configuration verification failed: Quorum is ${verifiedSignerList.quorum}, expected 2.`);
+    }
+
+    const verifiedAgent = verifiedSignerList.signers.find((s) => s.address === agentWallet.classicAddress);
+    const verifiedPolicy = verifiedSignerList.signers.find((s) => s.address === policyWallet.classicAddress);
+
+    if (!verifiedAgent || verifiedAgent.weight !== 1) {
+      throw new Error("Post-configuration verification failed: Agent signer weight mismatch.");
+    }
+    if (!verifiedPolicy || verifiedPolicy.weight !== 1) {
+      throw new Error("Post-configuration verification failed: Policy signer weight mismatch.");
+    }
+
+    console.log(`✓ Independent verification complete: SignerList verified on ledger with Quorum 2 and exact weights.`);
   }
 
-  console.log("\n=================================================");
-  console.log("           SETUP COMPLETE & VERIFIED             ");
-  console.log("=================================================");
-  console.log("Treasury is now protected by 2-of-2 XRPL multisig.");
-  console.log("Neither the Agent nor the Policy Service can move funds alone.\n");
+  console.log("\n===============================================================");
+  console.log("             SECURITY GOVERNANCE & STATUS                      ");
+  console.log("===============================================================");
+  console.log("Security Statement:");
+  console.log(
+    '"Routine agent-initiated payments require both the agent signer and independent policy signer. The treasury operator retains a separate master-key recovery capability in the current Testnet configuration."',
+  );
+  console.log("===============================================================\n");
 
   await client.disconnect();
 }

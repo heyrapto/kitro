@@ -5,9 +5,9 @@ import type { Mandate } from "@kitro/core";
 // Default active mandate matching testnet environment
 const DEFAULT_MANDATE: Mandate = {
   version: 1,
-  operator: process.env.OPERATOR_ADDRESS || "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
+  operator: process.env.OPERATOR_ADDRESS || "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk",
   network: "xrpl:testnet",
-  treasury: process.env.TREASURY_ADDRESS || "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
+  treasury: process.env.TREASURY_ADDRESS || "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk",
   paused: false,
   perPaymentMaxDrops: "1000000", // 1 XRP cap
   dailyMaxDrops: "5000000",      // 5 XRP cap
@@ -17,7 +17,7 @@ const DEFAULT_MANDATE: Mandate = {
   issuedAt: "2026-11-13T00:00:00.000Z",
   payees: [
     {
-      address: process.env.SUPPLIER_ADDRESS || "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+      address: process.env.SUPPLIER_ADDRESS || "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
       name: "Reliable Cloud Services Ltd",
       route: "payment",
     },

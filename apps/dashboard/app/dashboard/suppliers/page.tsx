@@ -15,7 +15,7 @@ type Supplier = {
 
 const INITIAL_SUPPLIERS: Supplier[] = [
   {
-    address: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    address: "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
     name: "Reliable Cloud Services Ltd",
     route: "payment",
   },

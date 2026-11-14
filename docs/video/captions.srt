@@ -1,0 +1,51 @@
+1
+00:00:00,500 --> 00:00:05,800
+AI agents are now capable of managing enterprise operations.
+
+2
+00:00:05,900 --> 00:00:11,500
+But giving an autonomous agent a private key to your treasury creates an unacceptable financial catastrophe risk.
+
+3
+00:00:11,600 --> 00:00:17,200
+A single prompt injection or hallucinated invoice can drain millions in seconds.
+
+4
+00:00:17,300 --> 00:00:23,800
+Yet requiring human approval on every routine twenty-dollar invoice destroys the value of autonomy.
+
+5
+00:00:24,000 --> 00:00:28,800
+Introducing Kitro: policy-controlled autonomous treasury infrastructure on XRPL.
+
+6
+00:00:28,900 --> 00:00:32,500
+Kitro separates intelligence from financial authorization.
+
+7
+00:00:32,600 --> 00:00:38,000
+The AI agent interprets the invoice and proposes the payment.
+
+8
+00:00:38,100 --> 00:00:44,500
+An independent referee checks the supplier allowlist, per-payment caps, and daily spending capacity.
+
+9
+00:00:44,600 --> 00:00:53,800
+With both signatures collected, XRPL native 2-of-2 multisig settles the transaction in three seconds.
+
+10
+00:00:54,000 --> 00:00:59,500
+What if the agent is compromised? The policy referee refuses the transaction before signing.
+
+11
+00:00:59,600 --> 00:01:05,800
+Even if a rogue agent broadcasts directly to the ledger, XRPL quorum rules reject the transaction.
+
+12
+00:01:06,000 --> 00:01:10,200
+With Kitro, AI handles the work. You keep control of the money.
+
+13
+00:01:10,300 --> 00:01:15,000
+Kitro. Autonomous finance, controlled by policy.

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { Client } from "@kitro/xrpl";
+import { getKitroConfig } from "@kitro/core";
 
-const DEFAULT_WS = process.env.XRPL_RPC_URL || process.env.NEXT_PUBLIC_XRPL_WS || "wss://s.altnet.rippletest.net:51233";
+const config = getKitroConfig([], process.env as Record<string, string | undefined>);
+const DEFAULT_WS = config.XRPL_URL;
 
 const ACCOUNTS = {
-  treasury: process.env.TREASURY_ADDRESS || "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
-  agent: process.env.AGENT_ADDRESS || "rGEHsFSihK2PWcsLE7Bq9i1NkZkbfnKkZw",
-  policy: process.env.POLICY_ADDRESS || "rNVkiZXr5xwfHu4SgqAvFw355LqFjJf6Js",
-  supplier: process.env.SUPPLIER_ADDRESS || "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+  treasury: config.TREASURY_ADDRESS || "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk",
+  agent: config.AGENT_ADDRESS || "rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc",
+  policy: config.POLICY_ADDRESS || "r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn",
+  supplier: config.SUPPLIER_ADDRESS || "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
 };
 
 export async function GET() {

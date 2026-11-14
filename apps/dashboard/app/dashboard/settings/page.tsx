@@ -127,7 +127,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase">Treasury Vault (Operator)</span>
-              <span className="text-foreground break-all">rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn</span>
+              <span className="text-foreground break-all">rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk</span>
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase">Multisig Quorum (On-Ledger)</span>
@@ -135,16 +135,21 @@ export default function SettingsPage() {
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase">Agent Signer (Weight 1)</span>
-              <span className="text-foreground break-all">rGEHsFSihK2PWcsLE7Bq9i1NkZkbfnKkZw</span>
+              <span className="text-foreground break-all">rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc</span>
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase">Policy Signer (Weight 1)</span>
-              <span className="text-foreground break-all">rNVkiZXr5xwfHu4SgqAvFw355LqFjJf6Js</span>
+              <span className="text-foreground break-all">r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn</span>
             </div>
             <div className="md:col-span-2">
               <span className="text-muted-foreground block text-[10px] uppercase">Allowlisted Supplier</span>
-              <span className="text-foreground break-all">r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt (Reliable Cloud Services Ltd)</span>
+              <span className="text-foreground break-all">rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze (Reliable Cloud Services Ltd)</span>
             </div>
+          </div>
+
+          <div className="p-3 bg-muted/30 rounded border border-border/80 text-[11px] text-muted-foreground">
+            <span className="font-semibold text-foreground">Security Governance Statement: </span>
+            Routine agent-initiated payments require both the agent signer and independent policy signer. The treasury operator retains a separate master-key recovery capability in the current Testnet configuration.
           </div>
         </div>
 

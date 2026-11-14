@@ -1,12 +1,24 @@
 import { Client, type SubmittableTransaction, type TxResponse, type Wallet } from "xrpl";
 
-/** Connect to an XRPL node. The URL defaults to XRPL_URL. */
-export async function connect(url = process.env.XRPL_URL): Promise<Client> {
+/** Connect to an XRPL node. The URL defaults to XRPL_URL. Retries on transient network/DNS errors. */
+export async function connect(url = process.env.XRPL_URL, maxRetries = 3): Promise<Client> {
   if (!url) throw new Error("XRPL_URL is not set");
 
-  const client = new Client(url);
-  await client.connect();
-  return client;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const client = new Client(url, { connectionTimeout: 20000 });
+      await client.connect();
+      return client;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 /** XRPL returns `tesSUCCESS` in meta for a validated success. */

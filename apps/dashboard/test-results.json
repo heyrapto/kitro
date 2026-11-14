@@ -138,12 +138,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 23766,
+                      "duration": 8662,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:04:51.058Z",
+                      "startTime": "2026-11-14T00:53:12.977Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -157,7 +157,7 @@
               "column": 3
             },
             {
-              "title": "2. Onboarding wizard guides through 7 setup steps",
+              "title": "2. Complete onboarding flow guides through 7 setup steps",
               "ok": true,
               "tags": [],
               "tests": [
@@ -172,12 +172,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8559,
+                      "duration": 6902,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:05:20.882Z",
+                      "startTime": "2026-11-14T00:53:25.421Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -185,7 +185,7 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-b6715f14d1646a88cf71",
+              "id": "b1c7859d981cc20c96be-7b334975fac32f9e7240",
               "file": "e2e.spec.ts",
               "line": 22,
               "column": 3
@@ -206,12 +206,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 21426,
+                      "duration": 11573,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:05:29.503Z",
+                      "startTime": "2026-11-14T00:53:32.384Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -221,11 +221,11 @@
               ],
               "id": "b1c7859d981cc20c96be-b9e91c81ce60b498a8f2",
               "file": "e2e.spec.ts",
-              "line": 43,
+              "line": 61,
               "column": 3
             },
             {
-              "title": "4. Invoices page extracts structured data and evaluates with policy referee",
+              "title": "4. Invoice extraction and policy evaluation",
               "ok": true,
               "tags": [],
               "tests": [
@@ -240,12 +240,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 11278,
+                      "duration": 14186,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:05:51.212Z",
+                      "startTime": "2026-11-14T00:53:44.007Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -253,13 +253,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-fc23bd0b12d1c9cd517d",
+              "id": "b1c7859d981cc20c96be-9026e99783e6a40aad30",
               "file": "e2e.spec.ts",
-              "line": 60,
+              "line": 79,
               "column": 3
             },
             {
-              "title": "5. Approvals queue displays held payments requiring human operator authorization",
+              "title": "5. Approval queue displays held payments requiring human operator authorization",
               "ok": true,
               "tags": [],
               "tests": [
@@ -274,12 +274,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8979,
+                      "duration": 16247,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:06:02.558Z",
+                      "startTime": "2026-11-14T00:53:58.264Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -287,13 +287,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-513c9391454e7f57d67f",
+              "id": "b1c7859d981cc20c96be-f2863555dd0e4ba04fd6",
               "file": "e2e.spec.ts",
-              "line": 81,
+              "line": 98,
               "column": 3
             },
             {
-              "title": "6. Policy page displays active spending limits, caps, and allowlist rules",
+              "title": "6. Payment registry and payment details drawer",
               "ok": true,
               "tags": [],
               "tests": [
@@ -308,12 +308,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 5957,
+                      "duration": 6630,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:06:11.590Z",
+                      "startTime": "2026-11-14T00:54:14.593Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -321,13 +321,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-38c0500ffbdee4ce0b5e",
+              "id": "b1c7859d981cc20c96be-292d9876f27588e7b8a8",
               "file": "e2e.spec.ts",
-              "line": 90,
+              "line": 105,
               "column": 3
             },
             {
-              "title": "7. Audit page displays cryptographic audit receipts and verifiable hashes",
+              "title": "7. Policy configuration displays spending limits and mandate version",
               "ok": true,
               "tags": [],
               "tests": [
@@ -342,12 +342,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 10398,
+                      "duration": 2907,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:06:17.620Z",
+                      "startTime": "2026-11-14T00:54:21.267Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -355,13 +355,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-213465d21312bbc326e6",
+              "id": "b1c7859d981cc20c96be-c82a734b618a96b85f9d",
               "file": "e2e.spec.ts",
-              "line": 99,
+              "line": 117,
               "column": 3
             },
             {
-              "title": "8. Settings page displays network connection, multisig quorum, and integration information",
+              "title": "8. Supplier allowlist displays verified payees and explorer links",
               "ok": true,
               "tags": [],
               "tests": [
@@ -376,12 +376,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8792,
+                      "duration": 3743,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-11-13T22:06:28.070Z",
+                      "startTime": "2026-11-14T00:54:24.227Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -389,9 +389,77 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1c7859d981cc20c96be-70f4f5dea096172dbf52",
+              "id": "b1c7859d981cc20c96be-34c86eeeee58d2eba596",
               "file": "e2e.spec.ts",
-              "line": 107,
+              "line": 126,
+              "column": 3
+            },
+            {
+              "title": "9. Audit receipts display cryptographic SHA-256 hashes and ledger verification",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4452,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-14T00:54:28.056Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b1c7859d981cc20c96be-76ef806ef15b87ff6949",
+              "file": "e2e.spec.ts",
+              "line": 135,
+              "column": 3
+            },
+            {
+              "title": "10. Settings and MCP integration instructions display complete tool catalog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3848,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-14T00:54:32.553Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b1c7859d981cc20c96be-fa1155ff5f3feb4a2562",
+              "file": "e2e.spec.ts",
+              "line": 143,
               "column": 3
             }
           ]
@@ -401,9 +469,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-13T22:04:25.483Z",
-    "duration": 320006.239,
-    "expected": 8,
+    "startTime": "2026-11-14T00:53:07.309Z",
+    "duration": 99157.166,
+    "expected": 10,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

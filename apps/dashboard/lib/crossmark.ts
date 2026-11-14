@@ -27,8 +27,8 @@ declare global {
   }
 }
 
-export const PREFUNDED_TESTNET_OPERATOR = "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn";
-export const PREFUNDED_TESTNET_TREASURY = "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn";
+export const PREFUNDED_TESTNET_OPERATOR = "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk";
+export const PREFUNDED_TESTNET_TREASURY = "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk";
 
 const STORAGE_KEY = "kitro_connected_wallet";
 

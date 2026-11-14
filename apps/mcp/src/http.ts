@@ -3,20 +3,90 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { McpServer } from "./server.js";
 import type { JsonRpcRequest } from "./types.js";
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 
 const app = new Hono();
 const mcpServer = new McpServer();
 
 const MCP_API_KEY = process.env.KITRO_MCP_API_KEY;
 const PORT = Number(process.env.MCP_PORT ?? process.env.PORT ?? 3001);
+const HOST = process.env.MCP_HOST ?? "127.0.0.1";
 
-// Enable CORS for web/remote agent clients
-app.use("*", cors());
+// Security requirement: Never bind externally without authentication
+const isLoopback = HOST === "127.0.0.1" || HOST === "localhost";
+if (!isLoopback && !MCP_API_KEY) {
+  console.error("FATAL SECURITY ERROR: External MCP server binding without KITRO_MCP_API_KEY is prohibited.");
+  console.error("To expose MCP beyond loopback, set KITRO_MCP_API_KEY in your environment.");
+  process.exit(1);
+}
 
-// Bearer token authentication middleware
+// Restrict CORS to configured or trusted origins
+const allowedOriginsConfig = process.env.KITRO_ALLOWED_ORIGINS;
+const trustedOrigins = allowedOriginsConfig
+  ? allowedOriginsConfig.split(",").map((o) => o.trim()).filter(Boolean)
+  : ["http://localhost:3000", "http://127.0.0.1:3000"];
+
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      if (!origin) return null;
+      if (trustedOrigins.includes(origin) || trustedOrigins.includes("*")) {
+        return origin;
+      }
+      return null;
+    },
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
+// Constant-time token verification
+function secureCompare(provided: string, expected: string): boolean {
+  try {
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+// Simple in-memory rate limiter (sliding window per minute)
+const rateLimits = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 180;
+const RATE_LIMIT_WINDOW = 60_000;
+
 app.use("*", async (c, next) => {
-  // Allow health endpoint unauthenticated
+  const ip = c.req.header("x-forwarded-for") || "local";
+  const now = Date.now();
+  const entry = rateLimits.get(ip) ?? { count: 0, resetAt: now + RATE_LIMIT_WINDOW };
+
+  if (now > entry.resetAt) {
+    entry.count = 1;
+    entry.resetAt = now + RATE_LIMIT_WINDOW;
+  } else {
+    entry.count++;
+  }
+  rateLimits.set(ip, entry);
+
+  if (entry.count > RATE_LIMIT_MAX) {
+    return c.json(
+      {
+        jsonrpc: "2.0",
+        id: null,
+        error: { code: -32029, message: "Too many requests. Rate limit exceeded." },
+      },
+      429,
+    );
+  }
+
+  await next();
+});
+
+// Authentication middleware
+app.use("*", async (c, next) => {
   if (c.req.path === "/health") {
     return next();
   }
@@ -26,7 +96,7 @@ app.use("*", async (c, next) => {
     const match = /^Bearer\s+(.+)$/i.exec(authHeader);
     const token = match?.[1];
 
-    if (!token || token !== MCP_API_KEY) {
+    if (!token || !secureCompare(token, MCP_API_KEY)) {
       return c.json(
         {
           jsonrpc: "2.0",
@@ -44,26 +114,25 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// Health check
+// Health check endpoint
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
     service: "kitro-mcp-server",
     transports: ["stdio", "streamable-http", "sse"],
     authenticated: Boolean(MCP_API_KEY),
+    loopbackOnly: isLoopback,
     timestamp: new Date().toISOString(),
   });
 });
 
-// Standard HTTP POST JSON-RPC 2.0 endpoint (ChatGPT Actions, remote curl, HTTP agents)
+// Standard HTTP POST JSON-RPC 2.0 endpoint
 app.post("/mcp", async (c) => {
   try {
     const body = (await c.req.json()) as JsonRpcRequest | JsonRpcRequest[];
 
     if (Array.isArray(body)) {
-      const responses = await Promise.all(
-        body.map((req) => mcpServer.handleMessage(req)),
-      );
+      const responses = await Promise.all(body.map((req) => mcpServer.handleMessage(req)));
       return c.json(responses.filter(Boolean));
     }
 
@@ -89,13 +158,6 @@ app.post("/mcp", async (c) => {
   }
 });
 
-// Root path alias for convenience
-app.post("/", async (c) => {
-  const req = (await c.req.json()) as JsonRpcRequest;
-  const res = await mcpServer.handleMessage(req);
-  return res ? c.json(res) : c.body(null, 204);
-});
-
 // SSE Transport for MCP clients supporting Server-Sent Events
 const sseSessions = new Map<string, (data: string) => void>();
 
@@ -111,12 +173,10 @@ app.get("/sse", (c) => {
         controller.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${data}\n\n`));
       };
 
-      // Register session
       sseSessions.set(sessionId, (data: string) => {
         sendEvent("message", data);
       });
 
-      // Send initial endpoint event as specified in MCP SSE spec
       sendEvent("endpoint", `/message?sessionId=${sessionId}`);
     },
     cancel() {
@@ -147,16 +207,19 @@ app.post("/message", async (c) => {
   }
 });
 
-console.error(`[KITRO-MCP] Remote Streamable HTTP Server starting on port ${PORT}...`);
-console.error(`[KITRO-MCP] MCP JSON-RPC endpoint: http://localhost:${PORT}/mcp`);
-console.error(`[KITRO-MCP] MCP SSE endpoint:      http://localhost:${PORT}/sse`);
+console.error(`[KITRO-MCP] Streamable HTTP Server starting on http://${HOST}:${PORT}...`);
+console.error(`[KITRO-MCP] JSON-RPC endpoint: http://${HOST}:${PORT}/mcp`);
+console.error(`[KITRO-MCP] SSE endpoint:      http://${HOST}:${PORT}/sse`);
 if (MCP_API_KEY) {
-  console.error(`[KITRO-MCP] Authentication: Bearer token enforced.`);
+  console.error(`[KITRO-MCP] Security: Bearer token authentication enforced.`);
 } else {
-  console.error(`[KITRO-MCP] Authentication: Unauthenticated development mode.`);
+  console.error(
+    `[KITRO-MCP] WARNING: Running unauthenticated on loopback (${HOST}) for local development only. Do not tunnel publicly.`,
+  );
 }
 
 serve({
   fetch: app.fetch,
   port: PORT,
+  hostname: HOST,
 });

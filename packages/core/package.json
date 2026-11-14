@@ -10,7 +10,8 @@
     "./mandate": "./src/mandate.ts",
     "./reasons": "./src/reasons.ts",
     "./request": "./src/request.ts",
-    "./receipt": "./src/receipt.ts"
+    "./receipt": "./src/receipt.ts",
+    "./config": "./src/config.ts"
   },
   "scripts": {
     "lint": "eslint src",

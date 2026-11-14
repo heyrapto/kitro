@@ -22,7 +22,7 @@ const SAMPLE_HELD: HeldRequest[] = [
   {
     id: "req-held-001",
     invoiceId: "INV-2026-GPU-02",
-    payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+    payee: "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
     payeeName: "Reliable Cloud Services Ltd",
     amountDrops: "850000", // 0.85 XRP (> 0.50 XRP threshold)
     status: "held",
@@ -75,7 +75,7 @@ export default function ApprovalsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          destination: req.payee.startsWith("r") ? req.payee : "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+          destination: req.payee.startsWith("r") ? req.payee : "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
           amountDrops: req.amountDrops,
           invoiceId: req.invoiceId,
           description: `Human authorized settlement for ${req.invoiceId}`,

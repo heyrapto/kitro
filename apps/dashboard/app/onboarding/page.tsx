@@ -448,7 +448,7 @@ export default function OnboardingPage() {
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted border border-border">Weight 1</span>
                       </div>
                       <div className="font-mono text-[11px] text-muted-foreground break-all">
-                        rGEHsFSihK2PWcsLE7Bq9i1NkZkbfnKkZw
+                        rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc
                       </div>
                       <div className="text-[11px] text-muted-foreground">
                         Signs payment proposals generated from approved invoice extractions.
@@ -462,7 +462,7 @@ export default function OnboardingPage() {
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted border border-border">Weight 1</span>
                       </div>
                       <div className="font-mono text-[11px] text-muted-foreground break-all">
-                        rNVkiZXr5xwfHu4SgqAvFw355LqFjJf6Js
+                        r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn
                       </div>
                       <div className="text-[11px] text-muted-foreground">
                         Co-signs strictly when all spending limits and allowlists evaluate to allow.
@@ -472,6 +472,11 @@ export default function OnboardingPage() {
 
                   <div className="p-3 bg-muted/30 rounded border border-border/60 text-xs text-muted-foreground">
                     <span className="font-semibold text-foreground">Mathematical Guarantee:</span> If an AI agent attempts to execute an unauthorized payment, XRPL consensus immediately rejects the transaction with code <code className="font-mono text-foreground">tefBAD_QUORUM</code>.
+                  </div>
+
+                  <div className="p-3 bg-muted/20 rounded border border-border/70 text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground">Security Governance: </span>
+                    Routine agent-initiated payments require both the agent signer and independent policy signer. The treasury operator retains a separate master-key recovery capability in the current Testnet configuration.
                   </div>
                 </div>
               </div>
@@ -540,7 +545,7 @@ export default function OnboardingPage() {
                       <div>
                         <div className="text-xs font-semibold">Reliable Cloud Services Ltd</div>
                         <div className="font-mono text-[11px] text-muted-foreground">
-                          r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt
+                          rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze
                         </div>
                       </div>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted border border-border">
@@ -589,7 +594,7 @@ export default function OnboardingPage() {
                       { label: "Treasury Account Live", value: `${liveBalance} XRP Available` },
                       { label: "2-of-2 Multisigning Confirmed", value: "Quorum 2 (Agent + Policy Referee)" },
                       { label: "Spending Mandate Active", value: `Cap ${perPaymentCap} XRP / Daily ${dailyCap} XRP` },
-                      { label: "Allowlisted Supplier", value: "Reliable Cloud Services Ltd (r3N64...)" },
+                      { label: "Allowlisted Supplier", value: "Reliable Cloud Services Ltd (rwVrs...)" },
                     ].map((item, idx) => (
                       <div
                         key={idx}

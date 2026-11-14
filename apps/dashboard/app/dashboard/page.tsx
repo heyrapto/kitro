@@ -17,6 +17,7 @@ import {
   RefreshCw,
   CheckCircle2,
   Zap,
+  ShieldAlert,
 } from "lucide-react";
 
 type TreasuryInfo = {
@@ -46,47 +47,47 @@ type PaymentRequestItem = {
 
 export default function DashboardOverviewPage() {
   const [treasury, setTreasury] = useState<TreasuryInfo>({
-    treasuryAddress: "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
+    treasuryAddress: "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk",
     network: "XRPL Testnet (s.altnet.rippletest.net)",
     mandateStatus: "active",
     mandateVersion: 1,
     dailyMaxDrops: "5000000",
-    spentTodayDrops: "1000000",
-    remainingCapacityDrops: "4000000",
-    balanceXrp: "100.00",
-    balanceDrops: "100000000",
+    spentTodayDrops: "10000",
+    remainingCapacityDrops: "4990000",
+    balanceXrp: "99.98",
+    balanceDrops: "99980000",
   });
 
   const [requests, setRequests] = useState<PaymentRequestItem[]>([
     {
       id: "req-live-001",
-      invoiceId: "INV-2026-TESTNET-01",
-      payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
-      amountDrops: "1000000",
+      invoiceId: "INV-2026-CLOUD-01",
+      payee: "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
+      amountDrops: "10000",
       status: "approved",
       outcome: "allow",
-      createdAt: "2026-11-13T21:00:00.000Z",
-      txHash: "72B76A2830976A704B2F980AB93AE3D5F42BC3A30193C52A1071AD7A781A23D9",
-      ledgerIndex: 22300009,
+      createdAt: "2026-11-14T01:38:00.000Z",
+      txHash: "630D1C8B63B60F8AD9AB5953749823864AE9CA3CBC5C76866789AD8BF968695F",
+      ledgerIndex: 22305935,
       signers: "2-of-2 (Agent + Policy Referee)",
     },
     {
       id: "req-live-002",
       invoiceId: "INV-2026-REFUSE-CAP",
-      payee: "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt",
+      payee: "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze",
       amountDrops: "6000000",
       status: "refused",
       outcome: "refuse",
-      createdAt: "2026-11-13T20:30:00.000Z",
+      createdAt: "2026-11-14T01:37:00.000Z",
     },
     {
       id: "req-live-003",
       invoiceId: "INV-2026-UNKNOWN-PAYEE",
-      payee: "rPT1Sjq2YGrBMTttX4GZHjKu9DYfzbpAYe",
+      payee: "rpk3aL4L8UyHYu6DhBLgFZnBfGTpySP4XQ",
       amountDrops: "500000",
       status: "refused",
       outcome: "refuse",
-      createdAt: "2026-11-13T19:45:00.000Z",
+      createdAt: "2026-11-14T01:36:00.000Z",
     },
   ]);
 
@@ -278,6 +279,17 @@ export default function DashboardOverviewPage() {
           </div>
         </div>
 
+        {/* Treasury Security Governance Statement */}
+        <div className="p-3.5 rounded-lg border border-border/80 bg-muted/30 flex items-start gap-3 text-xs">
+          <ShieldAlert className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-semibold text-foreground">Security Governance Model:</span>
+            <p className="text-muted-foreground leading-relaxed">
+              Routine agent-initiated payments require both the agent signer and independent policy signer. The treasury operator retains a separate master-key recovery capability in the current Testnet configuration.
+            </p>
+          </div>
+        </div>
+
         {liveSuccessMessage && (
           <div className="p-4 rounded-lg border border-foreground/30 bg-muted/60 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2 text-foreground font-medium">
@@ -380,15 +392,15 @@ export default function DashboardOverviewPage() {
                   ? demoItems
                   : [
                       { title: "XRPL Testnet Connectivity", detail: "Connected to s.altnet.rippletest.net", status: "pass" },
-                      { title: "Treasury Account Funded", detail: "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn (100.00 XRP)", status: "pass" },
-                      { title: "AI Agent Signer Active", detail: "rGEHsFSihK2PWcsLE7Bq9i1NkZkbfnKkZw (Weight 1)", status: "pass" },
-                      { title: "Policy Signer Active", detail: "rNVkiZXr5xwfHu4SgqAvFw355LqFjJf6Js (Weight 1)", status: "pass" },
-                      { title: "2-of-2 Multisigning Quorum", detail: "SignerListSet confirmed on-ledger (Tx: 958A04C0...)", status: "pass" },
-                      { title: "Approved Supplier Allowlisted", detail: "Reliable Cloud Services Ltd (r3N64mq5...)", status: "pass" },
+                      { title: "Treasury Account Funded", detail: "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk (100.00 XRP)", status: "pass" },
+                      { title: "AI Agent Signer Active", detail: "rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc (Weight 1)", status: "pass" },
+                      { title: "Policy Signer Active", detail: "r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn (Weight 1)", status: "pass" },
+                      { title: "2-of-2 Multisigning Quorum", detail: "SignerListSet confirmed on-ledger (Tx: 71856854...)", status: "pass" },
+                      { title: "Approved Supplier Allowlisted", detail: "Reliable Cloud Services Ltd (rwVrsBE9...)", status: "pass" },
                       { title: "Spending Mandate Active", detail: "Single: 1 XRP | Daily: 5 XRP | Approval: >0.5 XRP", status: "pass" },
                       { title: "Invoice Intelligence Engine", detail: "Claude structured parser & deterministic schema", status: "pass" },
                       { title: "MCP Tools Registered", detail: "9 tools active for Antigravity & Claude Desktop", status: "pass" },
-                      { title: "Validated Multisig Settlement", detail: "Tx: 72B76A2830976A704B2F980AB93AE3D5F42BC3A30193C52A1071AD7A781A23D9", status: "pass" },
+                      { title: "Validated Multisig Settlement", detail: "Tx: 630D1C8B63B60F8AD9AB5953749823864AE9CA3CBC5C76866789AD8BF968695F", status: "pass" },
                     ]
                 ).map((item, idx) => (
                   <div

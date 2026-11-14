@@ -22,9 +22,9 @@ type MandateData = {
 
 const DEFAULT_MANDATE: MandateData = {
   version: 1,
-  operator: "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
+  operator: "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk",
   network: "XRPL Testnet (s.altnet.rippletest.net)",
-  treasury: "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn",
+  treasury: "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk",
   perPaymentMaxDrops: "1000000", // 1 XRP
   dailyMaxDrops: "5000000",      // 5 XRP
   requireApprovalAboveDrops: "500000", // 0.5 XRP

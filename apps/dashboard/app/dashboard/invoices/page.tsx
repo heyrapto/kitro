@@ -22,7 +22,7 @@ const SAMPLE_TEMPLATES = [
     text: `INVOICE #INV-2026-CLOUD-01
 Date: 2026-11-13
 Vendor: Reliable Cloud Services Ltd
-XRPL Destination: r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt
+XRPL Destination: rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze
 
 Line Items:
 - Kubernetes Node Cluster: 0.25 XRP
@@ -36,7 +36,7 @@ Memo: CLOUD-NOV-ROUTINE`,
     text: `INVOICE #INV-2026-GPU-02
 Date: 2026-11-13
 Vendor: Reliable Cloud Services Ltd
-XRPL Destination: r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt
+XRPL Destination: rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze
 
 Line Items:
 - Dedicated GPU Cluster Reserved Instance: 0.85 XRP
@@ -49,7 +49,7 @@ Memo: ANNUAL-GPU-RENEWAL`,
     text: `INVOICE #INV-2026-OVERLIMIT-03
 Date: 2026-11-13
 Vendor: Reliable Cloud Services Ltd
-XRPL Destination: r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt
+XRPL Destination: rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze
 
 Line Items:
 - Enterprise Multi-Region Deployment: 6.50 XRP
@@ -189,7 +189,7 @@ export default function InvoicesPage() {
     } catch {
       // Fallback evaluation
       const amt = parseFloat(amountXrp);
-      const isKnown = payeeAddress === "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt";
+      const isKnown = payeeAddress === "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze";
       let outcome = "allow";
       let reasons: string[] = [];
 

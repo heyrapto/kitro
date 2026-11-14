@@ -1,27 +1,39 @@
 import { NextResponse } from "next/server";
 import { Client, Wallet } from "@kitro/xrpl";
 import { prepareMultisigPayment, signMultisig, combineMultisig, submitMultisig } from "@kitro/xrpl/multisig";
-
-const DEFAULT_WS = process.env.XRPL_RPC_URL || process.env.NEXT_PUBLIC_XRPL_WS || "wss://s.altnet.rippletest.net:51233";
-const TREASURY_ADDRESS = process.env.TREASURY_ADDRESS || process.env.NEXT_PUBLIC_TREASURY_ADDRESS || "rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn";
-const AGENT_SEED = process.env.AGENT_SEED || "sEdSzsNgvkwMxZ2gZo62KLuCYcE4XQn";
-const POLICY_SEED = process.env.POLICY_SEED || "sEdV8Z9hGEJN9AgwLZRUqrRJi9AdZV4";
-const DEFAULT_SUPPLIER = process.env.SUPPLIER_ADDRESS || process.env.NEXT_PUBLIC_SUPPLIER_ADDRESS || "r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt";
+import { getKitroConfig } from "@kitro/core";
 
 export async function POST(request: Request) {
   let client: Client | null = null;
   try {
+    const config = getKitroConfig([], process.env as Record<string, string | undefined>);
+    const defaultWs = config.XRPL_URL;
+    const treasuryAddress = config.TREASURY_ADDRESS || "rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk";
+    const agentSeed = config.AGENT_SEED;
+    const policySeed = config.POLICY_SEED;
+    const defaultSupplier = config.SUPPLIER_ADDRESS || "rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze";
+
+    if (!agentSeed || !policySeed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Signing seeds (AGENT_SEED, POLICY_SEED) are not configured in environment.",
+        },
+        { status: 500 },
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
-    const destination = body.destination || DEFAULT_SUPPLIER;
-    const amountDrops = String(body.amountDrops || "1000000"); // Default 1 XRP
+    const destination = body.destination || defaultSupplier;
+    const amountDrops = String(body.amountDrops || "10000"); // Default 0.01 XRP (safe testnet amount)
     const invoiceId = body.invoiceId || `INV-${Date.now()}`;
     const description = body.description || "Authorized autonomous settlement";
 
-    client = new Client(DEFAULT_WS);
+    client = new Client(defaultWs, { connectionTimeout: 20000 });
     await client.connect();
 
-    const agentWallet = Wallet.fromSeed(AGENT_SEED);
-    const policyWallet = Wallet.fromSeed(POLICY_SEED);
+    const agentWallet = Wallet.fromSeed(agentSeed);
+    const policyWallet = Wallet.fromSeed(policySeed);
 
     // Prepare payment with 2 signers
     const memos = [
@@ -35,7 +47,7 @@ export async function POST(request: Request) {
 
     const prepared = await prepareMultisigPayment(
       client,
-      TREASURY_ADDRESS,
+      treasuryAddress,
       destination,
       amountDrops,
       memos,

@@ -37,7 +37,7 @@ Kitro is structured as a high-performance Turborepo monorepo with 10 workspace p
 Clone the repository and install all workspace dependencies:
 ```bash
 # Clone repository
-git clone https://github.com/kitro-treasury/kitro.git
+git clone https://github.com/heyrapto/kitro.git
 cd kitro
 
 # Install workspace dependencies
@@ -48,19 +48,19 @@ pnpm install
 Create `.env.local` in the project root:
 ```env
 # XRPL Testnet Connection
-XRPL_RPC_URL=wss://s.altnet.rippletest.net:51233
+XRPL_URL=wss://s.altnet.rippletest.net:51233
 
 # Pre-Configured Testnet Accounts (Generated & Funded via scripts/setup-testnet.ts)
-TREASURY_ADDRESS=rhdpnnEnBGUfXj76fU7ttkNKRJevqbLRqn
-TREASURY_SEED=sEd7UeR4Q9eK9ZpWj3D7Q2vM1Y8nF6t  # Operator recovery key
+TREASURY_ADDRESS=rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk
+TREASURY_SEED=sEd...<STORED_IN_GITIGNORED_ENV_LOCAL>
 
-AGENT_SIGNER_ADDRESS=rGEHsFSihK2PWcsLE7Bq9i1NkZkbfnKkZw
-AGENT_SIGNER_SEED=sEdV2mF4dJ8pL3sQ7xN9bK1vT5wZ6yX
+AGENT_ADDRESS=rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc
+AGENT_SEED=sEd...<STORED_IN_GITIGNORED_ENV_LOCAL>
 
-POLICY_SIGNER_ADDRESS=rNVkiZXr5xwfHu4SgqAvFw355LqFjJf6Js
-POLICY_SIGNER_SEED=sEdTv8qB5wX1mK9pL2sR6nF4jD7yZ3c
+POLICY_ADDRESS=r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn
+POLICY_SEED=sEd...<STORED_IN_GITIGNORED_ENV_LOCAL>
 
-SUPPLIER_ADDRESS=r3N64mq5qsbNpTaj8VdsU3LgfvAMXb2smt
+SUPPLIER_ADDRESS=rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze
 
 # Services Configuration
 PORT=3000
