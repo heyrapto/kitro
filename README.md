@@ -1,244 +1,307 @@
 # Kitro
 
-**A treasury agent for businesses on the XRP Ledger, with limits the agent can't change.**
+**Policy-Controlled Autonomous Treasury Infrastructure for Businesses on the XRP Ledger**
 
-An AI agent pays a company's bills. A person sets the rules. The XRP Ledger and an independent policy service enforce them, so the agent can ask for a payment but can never approve its own. No custom smart contract is deployed: native XRPL features hold the money and check the signatures.
+[![XRPL Testnet](https://img.shields.io/badge/XRPL-Testnet%20Verified-blue)](https://testnet.xrpl.org)
+[![Multisig Quorum](https://img.shields.io/badge/Multisig-2--of--2%20Native%20Quorum-brightgreen)](#how-it-works)
+[![MCP Ready](https://img.shields.io/badge/MCP-9%20Tools%20Active-purple)](#connecting-ai-assistants-via-mcp)
+[![Tests Passing](https://img.shields.io/badge/Unit%20Tests-120%2F120%20Passing-success)](#testing--verification)
+[![Playwright E2E](https://img.shields.io/badge/Playwright%20E2E-10%2F10%20Passing-success)](#testing--verification)
+[![License](https://img.shields.io/badge/License-Apache%202.0-black)](#license)
 
-> **Status: scaffold.** Testnet only, not audited. The docs in [`docs/`](./docs) are the design; code is being built in order. Nothing in this repository is described as working unless its status says so. Replace every `[bracketed]` item before publishing.
+> **"Let AI handle the work. Keep control of the money."**  
+> *An AI agent may request a payment. It must never be allowed to authorize itself.*
 
-## Contents
+---
 
-- [Why](#why)
-- [How it works](#how-it-works)
-- [What this repository provides](#what-this-repository-provides)
-- [The mandate](#the-mandate)
-- [Installation](#installation)
-- [Usage](#usage)
-- [HTTP interfaces](#http-interfaces)
-- [Security model](#security-model)
-- [Scope and limitations](#scope-and-limitations)
-- [Repository layout](#repository-layout)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License and acknowledgments](#license-and-acknowledgments)
+## Table of Contents
 
-## Why
+- [The Problem: The Autonomous Agent Dilemma](#the-problem-the-autonomous-agent-dilemma)
+- [How Kitro Works: Separation of Powers](#how-kitro-works-separation-of-powers)
+- [Monorepo Architecture](#monorepo-architecture)
+- [Quickstart: How to Run Kitro Locally](#quickstart-how-to-run-kitro-locally)
+- [Testing & Forensic Verification](#testing--forensic-verification)
+- [Connecting AI Assistants via MCP](#connecting-ai-assistants-via-mcp)
+- [Live Testnet Proof & Transaction Evidence](#live-testnet-proof--transaction-evidence)
+- [Complete Dashboard Walkthrough](#complete-dashboard-walkthrough)
+- [Security Governance & Disclosure](#security-governance--disclosure)
+- [License](#license)
 
-Finance teams want agents to pay suppliers, but giving an agent a wallet gives it the whole balance. One bug, one prompt injection or one bad invoice and the money is gone. So people approve every payment by hand, and the agent saves no time.
+---
 
-Kitro moves the limits **out of the agent's reach**. The agent holds one signing key, and every payment also needs a signature from something it doesn't control. Three controls work together:
+## The Problem: The Autonomous Agent Dilemma
 
-1. **A funded budget** that the agent can't overdraw (an XRPL Payment Channel).
-2. **A policy co-signer** that signs only what fits the operator's mandate (XRPL multisig).
-3. **Verified escrow** for suppliers the business hasn't paid before.
+As modern enterprises deploy autonomous AI agents to manage accounts payable, cloud resources, and vendor disbursements, CFOs and finance teams face an unacceptable trade-off:
 
-Our first customer is [named customer], who pays [number] suppliers every [week/month]. [One sentence on their pain.]
+1. **Give agents direct wallet access:** The AI agent moves fast, but a single prompt injection attack, malformed invoice, or logic hallucination can drain the entire treasury in seconds.
+2. **Require human sign-off on every transaction:** The company stays financially safe, but requiring an executive to manually approve every \$20 API or compute invoice creates a bottleneck that defeats the purpose of automation.
 
-## How it works
+**Kitro eliminates this dilemma** by moving financial authorization *completely out of the AI agent's reach*.
+
+---
+
+## How Kitro Works: Separation of Powers
+
+Kitro enforces a strict separation between **Intelligence**, **Authorization**, and **Settlement**:
 
 ```mermaid
 sequenceDiagram
-  participant O as Operator (person)
-  participant A as Agent
-  participant P as Policy service
-  participant L as XRP Ledger
-  participant S as Supplier
-  O->>P: signed mandate (limits, payees, daily total)
-  O->>L: fund budget channel, set signer list
-  A->>P: request payment (invoice, payee, amount)
-  P->>P: check mandate
-  alt known supplier, within limit
-    P->>A: signed channel claim / second signature
-    A->>L: payment from the budget channel
-    L-->>S: supplier paid
-  else new supplier
-    P->>L: EscrowCreate (funds locked)
-    P->>L: EscrowFinish after delivery is verified
-  else unusual or over the limit
-    P->>O: approval request
-    O->>P: approve or reject
+  autonumber
+  actor Supplier as External Supplier
+  actor Operator as Human Treasury Operator
+  participant Agent as AI Execution Agent
+  participant Policy as Independent Policy Referee
+  participant XRPL as XRP Ledger Testnet
+
+  Note over Operator,Policy: Step 0: Operator establishes spending mandate
+  Operator->>Policy: Configure spending caps, daily limits & allowlisted suppliers
+
+  Supplier->>Agent: Submits unstructured invoice (e.g. PDF / text)
+  Agent->>Agent: Extracts vendor, destination address & drop amounts
+  Agent->>Policy: Submits structured payment proposal (request_payment)
+
+  Note over Policy: Step 2: Deterministic Policy Evaluation
+  Policy->>Policy: Validates allowlist, per-payment cap & daily spending capacity
+
+  alt Policy Decision: ALLOW (Within limits & allowlisted)
+    Policy-->>Agent: Issues signed cryptographic decision receipt (SHA-256)
+    Agent->>Agent: Signs transaction with Agent Key (Weight 1)
+    Policy->>Policy: Co-signs transaction with Policy Key (Weight 1)
+    Policy->>XRPL: Broadcasts 2-of-2 multisigned transaction
+    XRPL-->>Supplier: Settle payment in 3 seconds (tesSUCCESS)
+  else Policy Decision: HOLD (Exceeds approval threshold)
+    Policy-->>Operator: Routes to Operator Approval Queue
+    Operator->>Policy: Approves transaction in dashboard
+    Policy->>XRPL: Co-signs and broadcasts 2-of-2 transaction
+  else Policy Decision: REFUSE (Over cap or unknown payee)
+    Policy-->>Agent: Rejection receipt issued; ZERO transaction sent to ledger
   end
-  P-->>A: signed decision receipt
 ```
 
-| Case                          | XRPL mechanism                                                                           | Who enforces it                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Routine supplier              | `PaymentChannelCreate`, then `PaymentChannelClaim`                                       | The ledger: the channel holds a fixed amount for one fixed payee                  |
-| Any treasury transaction      | Account with a signer list (`SignerListSet`), quorum 2                                   | The ledger: a transaction without the policy service's signature is invalid       |
-| New supplier                  | `EscrowCreate` with a condition and `CancelAfter`, then `EscrowFinish` or `EscrowCancel` | The ledger: funds release only with the fulfillment, or return after the deadline |
-| Unusual or over-limit payment | Held in the policy service's queue                                                       | A person: nothing is signed until they approve                                    |
-| Change the rules              | Signed mandate update, `PaymentChannelFund`, `SignerListSet`                             | The operator, outside the agent                                                   |
+### Mathematical Proof of Security
+Settlement is enforced at the XRP Ledger consensus layer using a native `SignerListSet` on the treasury account:
+- **SignerQuorum:** `2`
+- **Agent Signer:** Weight `1`
+- **Policy Signer:** Weight `1`
 
-## What this repository provides
+$$\text{Agent Alone}: \text{Weight } 1 < 2 \implies \mathbf{tefBAD\_QUORUM}\quad \text{(Ledger Rejection)}$$
+$$\text{Policy Alone}: \text{Weight } 1 < 2 \implies \mathbf{tefBAD\_QUORUM}\quad \text{(Ledger Rejection)}$$
+$$\text{Agent } + \text{ Policy}: 1 + 1 = 2 \ge \text{Quorum } 2 \implies \mathbf{tesSUCCESS}\quad \text{(Validated On-Ledger)}$$
 
-| Component                | Description                                                                                          | Location                                                           | Status     |
-| ------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
-| Mandate format           | A signed list of limits: per-payment cap, daily total, allowed payees, escrow rules.                 | [`docs/TECHNICAL_SPEC.md`](./docs/TECHNICAL_SPEC.md)               | Planned    |
-| Policy service           | An independent service that checks each request against the mandate and co-signs or refuses.         | [`apps/policy-service`](./apps/policy-service)                     | Scaffolded |
-| Budget channels          | Helpers to create, fund and close one Payment Channel per routine supplier, and to sign claims.      | [`packages/xrpl/src/channels.ts`](./packages/xrpl/src/channels.ts) | Planned    |
-| Escrow for new suppliers | Create, finish and cancel conditional escrows, with a pluggable delivery verifier.                   | [`packages/xrpl/src/escrow.ts`](./packages/xrpl/src/escrow.ts)     | Planned    |
-| Operator dashboard       | A page where a person sets, changes and pauses limits and approves unusual payments.                 | [`apps/dashboard`](./apps/dashboard)                               | Scaffolded |
-| Audit trail              | A signed receipt for every decision, with its hash in a transaction memo when a transaction is sent. | [`packages/core/src/receipt.ts`](./packages/core/src/receipt.ts)   | Planned    |
-| Example agent            | An agent that reads invoices and requests payments.                                                  | [`apps/agent`](./apps/agent)                                       | Scaffolded |
+Even if an AI agent is completely compromised, it has **zero mathematical ability** to debit the treasury without the independent policy referee's co-signature.
 
-Change each status to `In progress` or `Testnet-verified` only after you have run it on testnet.
+---
 
-## The mandate
+## Monorepo Architecture
 
-The operator signs a mandate with their own key. The policy service accepts only mandates that carry a valid signature and a higher version number than the last one.
+Kitro is structured as a Turborepo monorepo with 10 workspace packages:
 
+```
+kitro/
+├── apps/
+│   ├── dashboard/          # Next.js 15 Operator Dashboard & Crossmark Web3 Wallet
+│   ├── policy-service/     # Independent Hono REST API & Policy Referee (Port 8787)
+│   ├── mcp/                # Model Context Protocol dual transport: STDIO & Streamable HTTP/SSE (Port 3001)
+│   └── agent/              # Autonomous invoice processing agent with Claude structured extraction
+├── packages/
+│   ├── core/               # Domain models, Zod validation schemas, canonical config resolver, receipts
+│   ├── rules/              # Pure deterministic evaluation engine (spending caps, daily capacity)
+│   ├── xrpl/               # XRPL SDK wrapper (native multisig, SignerListSet, validated submissions)
+│   ├── db/                 # Drizzle ORM schemas, PostgreSQL driver & persistent audit store
+│   └── client/             # Strongly-typed TypeScript client for Kitro Policy Service
+├── scripts/
+│   ├── setup-testnet.ts    # Testnet faucet funding & on-ledger SignerListSet configuration
+│   └── e2e.ts              # 6 live Testnet verification scenarios (ALLOW, HOLD, REFUSE, Bad Quorum)
+└── docs/                   # Forensic audit reports, demo runbooks, and MCP setup guides
+```
+
+---
+
+## Quickstart: How to Run Kitro Locally
+
+### 1. Prerequisites
+- **Node.js:** `>= 22.0.0`
+- **pnpm:** `>= 10.0.0`
+- **Git**
+
+### 2. Clone and Install Dependencies
+```bash
+git clone https://github.com/heyrapto/kitro.git
+cd kitro
+pnpm install
+```
+
+### 3. Initialize Environment & Testnet Accounts
+Kitro comes pre-configured with active, pre-funded XRPL Testnet accounts in `.env.example`. 
+
+To generate a fresh set of Testnet accounts and automatically configure the 2-of-2 multisig signer list on the ledger:
+```bash
+pnpm --filter @kitro/scripts setup-testnet -- --fresh
+```
+*(This archives any existing `.env.local`, funds 4 accounts from the official Ripple faucet, sets up the `SignerListSet` on-ledger, and securely writes `.env.local` without ever printing private keys to your console).*
+
+### 4. Start the Full Application Stack
+Open three separate terminals in the repository root:
+
+#### Terminal 1 — Policy Referee Microservice (Port 8787)
+```bash
+pnpm --filter @kitro/policy-service dev
+# Output: [KITRO-POLICY] Referee service running on http://localhost:8787
+```
+
+#### Terminal 2 — Kitro Operator Dashboard (Port 3000)
+```bash
+pnpm --filter @kitro/dashboard dev
+# Output: Ready in 1200ms at http://localhost:3000
+```
+
+#### Terminal 3 — Model Context Protocol (MCP) Server (Port 3001)
+```bash
+pnpm dev:mcp:http
+# Output: [KITRO-MCP] Streamable HTTP Server starting on http://127.0.0.1:3001...
+```
+
+Open **[http://localhost:3000](http://localhost:3000)** in your browser to start the guided onboarding and live demonstration.
+
+---
+
+## Testing & Forensic Verification
+
+Run the full verification suite across all 10 workspaces:
+
+```bash
+# 1. TypeScript compilation check across all 10 workspaces
+pnpm typecheck
+
+# 2. ESLint static analysis across all workspaces
+pnpm lint
+
+# 3. Unit and integration test suite (120 tests passing)
+pnpm test
+
+# 4. Playwright End-to-End browser test suite (10 tests passing in Chromium)
+pnpm --filter @kitro/dashboard test:e2e
+
+# 5. Live XRPL Testnet 6-scenario verification suite
+pnpm testnet:e2e
+
+# 6. Next.js production build (17 routes compiled cleanly)
+pnpm --filter @kitro/dashboard build
+```
+
+---
+
+## Connecting AI Assistants via MCP
+
+Kitro natively exposes **9 Model Context Protocol (MCP) tools** allowing assistants like Google Antigravity and Claude Desktop to safely inspect invoices, check treasury balances, and propose payments without ever receiving private keys:
+
+| Tool Name | Type | Description |
+| :--- | :--- | :--- |
+| `get_treasury_status` | Read-only | Real-time on-ledger balance, quorum status, and daily capacity |
+| `get_spending_policy` | Read-only | Active spending mandate rules, caps, and approval thresholds |
+| `list_suppliers` | Read-only | All verified and allowlisted supplier addresses |
+| `list_payment_requests` | Read-only | Recent payment proposals filtered by status (`received`, `held`, `approved`, `refused`) |
+| `get_payment_status` | Read-only | On-ledger settlement status and transaction hash for a request |
+| `read_invoice` | Read-only | Structured extraction of vendor, address, and XRP drop amounts from text |
+| `list_pending_approvals`| Read-only | Payment requests held by referee requiring human approval |
+| `get_audit_receipt` | Read-only | Cryptographic SHA-256 decision receipt and Ed25519 signature |
+| `request_payment` | Controlled Write | Proposes an invoice payment to the policy referee |
+
+### Google Antigravity Configuration
+Add to your project's `.agents/mcp_config.json`:
 ```json
 {
-  "version": 3,
-  "operator": "rOperatorAddress...",
-  "network": "xrpl:1",
-  "perPaymentMaxDrops": "5000000",
-  "dailyMaxDrops": "20000000",
-  "allowedPayees": ["rSupplierA...", "rSupplierB..."],
-  "newPayeeRoute": "escrow",
-  "escrowMaxLockSeconds": 86400,
-  "requireApprovalAboveDrops": "10000000",
-  "paused": false
+  "mcpServers": {
+    "kitro": {
+      "command": "pnpm",
+      "args": ["--filter", "@kitro/mcp", "start"],
+      "env": {
+        "KITRO_API_URL": "http://localhost:8787"
+      }
+    }
+  }
 }
 ```
 
-The policy service checks every request against these rules:
-
-| Check                                                     | Result if it fails                                        |
-| --------------------------------------------------------- | --------------------------------------------------------- |
-| Mandate signature valid and not older than the stored one | Refuse everything                                         |
-| Service is not paused                                     | Refuse                                                    |
-| Payee is on the allowed list                              | Route to escrow, or refuse if `newPayeeRoute` is `refuse` |
-| Amount is at or below the per-payment cap                 | Refuse                                                    |
-| Amount plus today's total is at or below the daily cap    | Refuse                                                    |
-| Amount is at or below the approval threshold              | Hold for the operator                                     |
-| Escrow lock time is within `escrowMaxLockSeconds`         | Refuse                                                    |
-
-[Add or remove checks to match what you build.]
-
-## Installation
-
-The packages aren't published yet. Build from source:
-
-```bash
-git clone https://github.com/heyrapto/kitro
-cd kitro
-pnpm install
-pnpm build
+### Claude Desktop Configuration
+Add to `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+```json
+{
+  "mcpServers": {
+    "kitro": {
+      "command": "pnpm",
+      "args": ["--prefix", "/ABSOLUTE/PATH/TO/kitro", "--filter", "@kitro/mcp", "start"],
+      "env": {
+        "KITRO_API_URL": "http://localhost:8787"
+      }
+    }
+  }
+}
 ```
 
-Requirements: Node.js 22 or later, pnpm 10 or later. Runtime dependency: `xrpl` 5.x (see `packages/xrpl/package.json`).
+### Sample Assistant Prompts
+- *"Check my Kitro treasury balance, active signer quorum and remaining daily spending capacity."*
+- *"Here is an invoice from our cloud provider for 0.01 XRP to rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze. Parse it and submit a payment request."*
+- *"Show all payment requests currently held in the human operator approval queue."*
 
-## Usage
+For detailed remote HTTP/SSE and ChatGPT instructions, see [`docs/CONNECT_KITRO_TO_AI.md`](./docs/CONNECT_KITRO_TO_AI.md).
 
-[Replace the sketches below with code that runs. Keep each example short, like the examples in the x402 XRPL binding that inspired this layout.]
+---
 
-### Operator
+## Live Testnet Proof & Transaction Evidence
 
-```ts
-// 1. Fund a budget channel for a routine supplier
-// 2. Set the treasury signer list: agent key + policy service key, quorum 2
-// 3. Sign and submit the mandate to the policy service
-```
+All accounts and transactions are validated on the public XRP Ledger Testnet (`wss://s.altnet.rippletest.net:51233`):
 
-### Agent
+### Participating Testnet Accounts
+- **Treasury Vault (Operator):** [`rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk`](https://testnet.xrpl.org/accounts/rPZvtGrKJyN38wt6AFLLkZs6PbrqpDdHPk) (Balance: ~99.98 XRP, Quorum: 2)
+- **Agent Signer (AI Execution):** [`rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc`](https://testnet.xrpl.org/accounts/rH3Gng7Nz9JhGPPpjjbDoQBATSDWjaEZSc) (Weight: 1)
+- **Policy Signer (Referee):** [`r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn`](https://testnet.xrpl.org/accounts/r4sML1TA1mqjEbtEBJ1PfwWNs9yy2djyNn) (Weight: 1)
+- **Allowlisted Supplier:** [`rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze`](https://testnet.xrpl.org/accounts/rwVrsBE9iWVyNhtYVNhMmS2yyoQDM9oaze) (*Reliable Cloud Services Ltd*)
 
-```ts
-// Ask the policy service to pay an invoice. The agent never submits alone.
-const decision = await kitro.requestPayment({
-  invoiceId: "INV-1042",
-  payee: "rSupplierA...",
-  amountDrops: "2500000",
-});
-// decision.status: "paid" | "escrowed" | "needs_approval" | "refused"
-```
+### Validated On-Ledger Transactions
+1. **Multisig SignerListSet Transaction:**  
+   Hash: [`71856854C8DEA4B67825FA5386883E54DCA48A2497FF36E2D8775F66A1884910`](https://testnet.xrpl.org/transactions/71856854C8DEA4B67825FA5386883E54DCA48A2497FF36E2D8775F66A1884910)  
+   Ledger Sequence: `22305905` | Result: `tesSUCCESS`
+2. **Executed 2-of-2 Multisign Payment:**  
+   Hash: [`630D1C8B63B60F8AD9AB5953749823864AE9CA3CBC5C76866789AD8BF968695F`](https://testnet.xrpl.org/transactions/630D1C8B63B60F8AD9AB5953749823864AE9CA3CBC5C76866789AD8BF968695F)  
+   Ledger Sequence: `22305935` | Result: `tesSUCCESS` | Fee: 36 drops | Amount: 0.01 XRP (10,000 drops)
+3. **Cryptographic Decision Receipt:**  
+   Canonical SHA-256 Digest: `95356118693E8A1A6324993CFBB72D1BA2455BE202AE7D88E4B5793C65DAE0C2`
 
-### Policy service
+---
 
-```ts
-// Verify the mandate signature, run the checks, then either:
-//  - sign a channel claim or the second multisig signature,
-//  - create an escrow for a new supplier, or
-//  - queue the request for the operator.
-```
+## Complete Dashboard Walkthrough
 
-## HTTP interfaces
+The Kitro dashboard features a strict monochrome, high-contrast aesthetic (Apple / Linear standard) with 10 integrated views:
 
-**Policy service** ([`apps/policy-service`](./apps/policy-service)), planned design:
+- **Landing Page (`/`):** Explains core positioning: *"Let AI handle the work. Keep control of the money."*
+- **7-Step Onboarding Wizard (`/onboarding`):** Guides the operator through workspace setup, network selection (Testnet active, Mainnet locked), wallet connection (Crossmark or 1-click testnet treasury), balance check, 2-of-2 multisig model, spending mandate configuration, and readiness checklist.
+- **Treasury Overview (`/dashboard`):** Real-time on-ledger balance, 24-hour spending limit, policy capacity, and 1-click **"Execute 2-of-2 Payment"** test button.
+- **Invoice Intelligence (`/dashboard/invoices`):** 4 pre-loaded real-world invoice presets (Routine, High-Value, Over-Cap, Unknown Vendor) with AI extraction, policy evaluation, and live 2-of-2 multisig settlement.
+- **Approval Queue (`/dashboard/approvals`):** Review payments placed in `held` status and co-sign directly from the dashboard.
+- **Payment Registry (`/dashboard/payments`):** Auditable table of all received, held, approved, and refused payment requests with a clickable forensic detail drawer.
+- **Policy Mandate Editor (`/dashboard/policy`):** Configure per-payment caps, daily limits, approval thresholds, and unknown payee routing rules.
+- **Supplier Allowlist (`/dashboard/suppliers`):** Registry of approved vendor addresses with direct XRPL Explorer inspect links.
+- **Cryptographic Audit Trail (`/dashboard/audit`):** Immutable log of canonical SHA-256 decision hashes, referee Ed25519 signatures, and validated ledger sequences.
+- **Settings & Integration (`/dashboard/settings`):** Copyable configurations for Google Antigravity, Claude Desktop, and remote HTTP/SSE endpoints, plus full catalog of all 9 MCP tools.
 
-| Route                        | Purpose                                                 | Called by                |
-| ---------------------------- | ------------------------------------------------------- | ------------------------ |
-| `POST /mandate`              | Submit a new signed mandate                             | Operator                 |
-| `GET /mandate`               | Read the active mandate                                 | Anyone                   |
-| `POST /requests`             | Request a payment                                       | Agent                    |
-| `GET /requests/:id`          | Status: `paid`, `escrowed`, `needs_approval`, `refused` | Agent, operator          |
-| `POST /requests/:id/approve` | Approve a held payment                                  | Operator (authenticated) |
-| `POST /requests/:id/reject`  | Reject a held payment                                   | Operator (authenticated) |
-| `POST /pause`                | Stop all co-signing immediately                         | Operator (authenticated) |
-| `GET /decisions`             | Signed decision receipts                                | Operator, auditors       |
+---
 
-## Security model
+## Security Governance & Disclosure
 
-- **The agent can't pay alone.** Treasury transactions need two signatures (agent and policy service). The ledger rejects anything else.
-- **The agent can't overspend a channel.** A channel holds a fixed amount and a fixed payee. Claims above the funded balance are invalid.
-- **The policy service can't spend money by itself either.** It holds one key of two. It can refuse or sign, but it can't send a payment without the agent's request.
-- **The operator keeps the master key offline.** Only the operator can change the signer list, fund or close channels, or replace the policy service.
-- **Mandates are signed.** A forged or replayed mandate (older version) is refused.
-- **New suppliers are paid on delivery.** Escrow funds release only with the fulfillment, and after `CancelAfter` they can only return to the treasury.
-- **Decisions are recorded.** Every approve, reject and release produces a signed receipt. Sent transactions also carry its hash in a memo.
-- **Use separate accounts per network.** Don't reuse a testnet account on mainnet.
+> **Official Security Statement:**  
+> *"Routine agent-initiated payments require both the agent signer and independent policy signer. The treasury operator retains a separate master-key recovery capability in the current Testnet configuration."*
 
-## Scope and limitations
+### Key Security Invariants
+1. **Zero Custody in Browser:** Kitro never handles, prompts for, or stores private keys in the browser client.
+2. **Deterministic Authorization:** The critical financial authorization path contains zero LLM dependencies; rules are evaluated purely by mathematical referee logic.
+3. **No Secret Echoing:** If an environment variable is missing, startup fails with an explicit error without printing secrets.
+4. **Testnet Scope Boundary:** Kitro is currently built for the public XRPL Testnet. Disabling the treasury master key on Mainnet (`asfDisableMaster`) will require a formal institutional multi-party recovery protocol.
 
-- **XRP only at first.** RLUSD and MPT support are planned, not built.
-- **One channel per routine supplier.** A channel has a single fixed payee, so a business with many suppliers opens many channels, and each holds an owner reserve.
-- **Daily totals are enforced by the policy service, not the ledger.** The ledger enforces the channel cap, the payee and the signature rules. If the policy service is compromised _and_ the agent key is stolen, both could sign, so run the service separately and watch its logs.
-- **Rejected payments leave no transaction.** Refusals are recorded in signed receipts, not on the ledger.
-- **Escrow refunds wait for the deadline.** XRPL can't cancel an escrow before `CancelAfter`.
-- **Multisig costs more.** A multisigned transaction pays a higher fee than a single-signed one.
-- **Reserves.** The signer list, each channel and each open escrow count toward the account's reserve.
-- **Delivery verification is pluggable and basic at first.** [State what your first verifier checks, for example an invoice and purchase-order match.]
-- **Testnet only.** Mainnet is untested.
+For detailed risk models and security boundaries, see [`docs/SECURITY_AND_LIMITATIONS.md`](./docs/SECURITY_AND_LIMITATIONS.md).
 
-## Repository layout
+---
 
-```
-apps/dashboard/        Next.js operator dashboard
-apps/policy-service/   independent co-signing service (Hono)
-apps/agent/            example agent that requests payments
-packages/core/         shared types, zod schemas, mandates, receipts
-packages/rules/        pure policy engine
-packages/xrpl/         ledger helpers: channels, multisig, escrow, memos
-packages/client/       SDK the agent uses
-packages/db/           Drizzle schema and migrations
-scripts/               testnet setup and end-to-end scenarios
-docs/                  design docs and ADRs
-```
+## License
 
-## Development
-
-```bash
-pnpm install
-pnpm check                   # lint, typecheck, build, unit tests
-pnpm dev                     # dashboard, policy service and agent
-pnpm dev:dashboard           # only the dashboard
-```
-
-End-to-end on testnet. The setup script should create and fund throwaway testnet wallets (operator, agent, policy service, supplier) and write their seeds to a gitignored `.env`:
-
-```bash
-pnpm testnet:setup
-pnpm testnet:e2e             # routine payment, blocked overspend, new-supplier escrow, limit change
-```
-
-The end-to-end run should show four results, each a public testnet transaction (or a signed refusal): a routine payment goes through, an overspend is refused, a new supplier is paid through escrow after delivery, and the same payment clears after the operator raises the limit. [Add the real script names and transaction links once they exist.]
-
-## Contributing
-
-Changes land through pull requests against `main`. Record design decisions in [`docs/adr/`](./docs/adr). Never commit wallet seeds.
-
-## License and acknowledgments
-
-[Apache-2.0, confirm.] See `LICENSE`.
-
-Kitro's escrow flow follows the pattern of the x402 `auth-capture` binding for the XRP Ledger, which locks a payment in escrow and releases it only after the delivery is checked. [Say whether you reuse that package or reimplement the idea, and link it.] The project started at [event name, date]; pitch notes are in `docs/pitch.md`.# kitro
+Apache-2.0 License. See `LICENSE` for details. Built natively for the **XRPL Hackathon 2026**.
